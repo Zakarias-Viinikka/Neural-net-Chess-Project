@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="sv">
+
+<head>
+    <meta charset="utf-8">
+    <title> test2test</title>
+    <link rel="stylesheet" href="css/chessboard-1.0.0.min.css">
+    <style type="text/css">
+        body {
+            background-color: lightgreen;
+        }
+    </style>
+</head>
+
+<body id="body">
+    <!-- selfmade scripts -->
+    <script src="nnScriptsAndFiles/fenToArray.js"></script>
+    <script src="nnScriptsAndFiles/arrayToFen.js"></script>
+    <script src="nnScriptsAndFiles/pgnToArray.js"></script>
+    <!-- jquery -->
+    <script src="nnScriptsAndFiles/jquery-3.5.1.min.js"></script>
+    <!-- chessboard.js -->
+    <script src="nnScriptsAndFiles/chessboard-1.0.0.min.js"></script>
+    <!-- chess.js -->
+    <script src="nnScriptsAndFiles/chess.js"></script>
+    <!-- p5.js -->
+    <script src="nnScriptsAndFiles/p5/p5.min.js"></script>
+    <script src="nnScriptsAndFiles/p5/addons/p5.dom.min.js"></script>
+    <script src="nnScriptsAndFiles/p5/addons/p5.sound.min.js"></script>
+    <!-- tensorflow.js -->
+    <!--<script src="tensorflowjs/tfjs/dist/tf.js"></script>-->
+    <!-- use .min later maybe dunno -->
+    <script src='https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js'></script>
+
+    <div id="board" style="width: 400px"></div>
+    <button id="startTheTraining">Train</button>
+    <button id="playBestMove">Play best Move</button>
+    <button id="predictBestMove">Predict best move</button>
+    <script>
+        let leafMoves = []; //array for storing the leaf moves in the monte carlo tree search algorithm
+        let bestMoveIndex = 0; //stores the index for the best root move so far
+        let bestMoveValue = -1; //stores the value for the best prediction so far
+        let possibleMovesMonte; //possibleMoves but as a global variable for the monte carlo tree search
+        let boardBeforeMonte;
+
+        let trainingLimitForTesting = 2;
+
+        var game = new Chess();
+        let board = Chessboard('board', 'start');
+        let neuralNetFinalArray = [];
+
+        let carlsenGame = "1.e4 e5 2.Nf3 Nf6 3.Nxe5 d61 4.Nf3 Nxe4 5.d4 d5 6.Bd3 Nc6 7.O-O Be7 8.c3 Bg4 9.Nbd2 Nxd2 10.Bxd2 O-O 11.Bf4 Bd6 12.Bxd6 cxd6 13.Re1 Qf6 14.Bc2 Na5 15.Bb3 Nc4 16.Bxc4 dxc4 17.Qe2 b5 18.Qe4 Bxf3 19.Qxf3 Qxf3 20.gxf3 Rfe8 21.Kf1 g5 22.Rxe8+ Rxe8 23.Re1 Rxe1+ 24.Kxe1 Kg7 25.Kf1 Kf6 26.Ke2 Kf5 27.Ke3 d5 28.f4 g4 29.f3 h5  0-1 ";
+        let carlsenAsArray = [];
+
+        const inputLayer = tf.layers.dense({
+            inputShape: 69,
+            units: 10,
+            activation: 'relu'
+        });
+
+        const hiddenLayer2 = tf.layers.dense({
+            //inputShape: 69,
+            units: 150,
+            activation: 'relu'
+        });
+
+        const hiddenLayer3 = tf.layers.dense({
+            //inputShape: 150,
+            units: 100,
+            activation: 'relu'
+        });
+
+        const hiddenLayer4 = tf.layers.dense({
+            //inputShape: 100,
+            units: 80,
+            activation: 'relu'
+        });
+
+        const hiddenLayer5 = tf.layers.dense({
+            //inputShape: 80,
+            units: 60,
+            activation: 'relu'
+        });
+
+        const hiddenLayer6 = tf.layers.dense({
+            //inputShape: 60,
+            units: 50,
+            activation: 'relu'
+        });
+
+
+        const hiddenLayer7 = tf.layers.dense({
+            //inputShape: 50,
+            units: 25,
+            activation: 'relu'
+        });
+
+        const outputLayer = tf.layers.dense({
+            units: 1,
+            activation: 'softmax'
+        });
+
+        const model = tf.sequential();
+        model.add(inputLayer);
+        model.add(hiddenLayer2);
+        model.add(hiddenLayer3);
+        model.add(hiddenLayer4);
+        model.add(hiddenLayer5);
+        model.add(hiddenLayer6);
+        model.add(hiddenLayer7);
+        model.add(outputLayer);
+        model.compile({
+            optimizer: 'sgd',
+            loss: 'meanSquaredError'
+        })
+
+        function setup() {
+            noLoop();
+            carlsenAsArray = separateIntoMovesJs(carlsenGame);
+            while (carlsenAsArray[carlsenAsArray.length - 1] == "") {
+                carlsenAsArray.pop();
+            }
+            //console.log(carlsenAsArray);
+        }
+
+        async function createTrainingData(gameIndex) {
+            game.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'); //starting board
+            let possibleMoves = [];
+            let originalBoard = "";
+            let futureBoard = "";
+            let trainingData = [];
+
+            for (let i = 0; i < carlsenAsArray.length; i++) { //for every move that has been made in a game
+                if (trainingLimitForTesting > 0) {
+                    if (i >= trainingLimitForTesting) {
+                        i = carlsenAsArray.length;
+                    }
+                }
+                possibleMoves = game.moves();
+                originalBoard = game.fen();
+                //add training data//
+                for (var v = 0; v < possibleMoves.length; v++) { //for every possible move for a particular board state
+                    let possibleBoard = game.fen(); //gets the board as FEN from chess.js
+                    let input = getNeuralInputFromFen();
+                    //Finished with the input array
+
+                    //adds training data
+                    let tfinput = tf.tensor2d([input])
+                    let target;
+
+                    if (possibleMoves[v] == carlsenAsArray[i]) { //checks if the move is the one that was made in the original game
+                        target = tf.tensor1d([1]);
+                    } else {
+                        target = tf.tensor1d([-1]);
+                    }
+                    const response = await model.fit([tfinput], [target] /*, config?*/ );
+                    //console.log(response.history.loss[0]);
+                    tf.dispose(tfinput);
+                    tf.dispose(target);
+                    //resets board
+                    game.load(originalBoard);
+                }
+                //updates board for next move
+                game.move(carlsenAsArray[i]);
+            }
+            finishedTraining();
+        }
+
+        async function trainTheModel(prediction, target) {}
+
+        function finishedTraining() {
+            console.log('Training has been finished!');
+            console.log('Number of tensors not disposed: ' + tf.memory().numTensors);
+            let fenTest = "rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 1";
+            game.load(fenTest);
+            board = Chessboard('board', fenTest);
+            /*let testArr = [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 5, 0, 1, 0, 0, 1, 7, 0, 7, 1, 0, 0, 0, 7, 0, 11, 7, 0, 0, 7, 7, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];	
+            let tfTestArr = tf.tensor2d([testArr]);
+            model.predict([tfTestArr]).print();
+            tf.dispose(tfTestArr);*/
+        }
+
+        document.getElementById("startTheTraining").addEventListener("click", startTraining);
+
+        function startTraining() {
+            createTrainingData();
+        }
+
+        async function monteCarloTreeSearch() {
+            amntOfPositionToCheck = 5;
+            boardBeforeMonte = game.fen(); //saves the board before anything is done
+            possibleMovesMonte = game.moves();
+            let originalBoard = game.fen();
+            let rootMoves = [];
+            let evaluationPool = 0; // all the evaluations will be added into this variable and later the number will be used to distribute how many moves each move is worth investigating further
+
+            for (var i = 0; i < possibleMovesMonte.length; i++) {
+                game.move(possibleMovesMonte[i]);
+
+                let move = tf.tensor2d([getNeuralInputFromFen()]);
+                let promise = await model.predict(move); // the promise stores the predict data once the model is done predicting
+                //console.log(promise[0]);
+                //rootMoves.push(positionEvaluation())
+                let results = parseFloat(promise.dataSync());
+                if (results > 0) {
+                    evaluationPool += results;
+                }
+                rootMoves.push(new rootEvaluation(i, results))
+                tf.dispose(promise);
+                tf.dispose(move);
+
+                game.load(originalBoard);
+            }
+            //hand out moves
+            let sortMovesByValueArr = [];
+            let totalMovesHandedOut = 0;
+            for (var i = 0; i < rootMoves.length; i++) {
+                rootMoves[i].updateMovesToCheck(evaluationPool, amntOfPositionToCheck);
+                totalMovesHandedOut += rootMoves[i].getPositionsToCheckLeft();
+                //console.log("getPositionsToCheckLeft gives: ", rootMoves[i].getPositionsToCheckLeft());
+                sortMovesByValueArr.push(i + "," + rootMoves[i].getEvaluation());
+            }
+            //sort moves by value
+            sortMovesByValueArr.sort(compareWithSplit);
+            //remove the extra moves handed out
+            let removeMoveIndex = sortMovesByValueArr.length;
+            console.log("Amount of moves handed out: ", totalMovesHandedOut, "Limit given: ", amntOfPositionToCheck);
+            while (totalMovesHandedOut > amntOfPositionToCheck) {
+                console.log("Amount of moves handed out: ", totalMovesHandedOut, "Limit given: ", amntOfPositionToCheck);
+                rootMoves[sortMovesByValueArr[removeMoveIndex - 1].split(",")[0]].removeAMove();
+                removeMoveIndex--;
+                if (removeMoveIndex - 1 < 0) {
+                    removeMoveIndex = sortMovesByValueArr.length;
+                }
+                totalMovesHandedOut--;
+            }
+            //create the first set of leafmoves
+            for (var i = 0; i < rootMoves.length; i++) {
+                game.load(originalBoard);
+                game.move(possibleMovesMonte[i]);
+                //i is the root of the leaf
+                leafMoves.push(new leafEvaluation(i, game.fen(), rootMoves[i].getPositionsToCheckLeft()));
+            }
+            leafMoves[0].getPredictions();
+        }
+
+        function compareWithSplit(a, b) {
+            a = a.split(",")[1];
+            b = b.split(",")[1];
+            return b - a;
+        }
+
+        function bestMoveFound() {
+            console.log("Amount of tensors: " + tf.memory().numTensors);
+            leafMoves = [];
+            console.log("The best move has is: " + possibleMovesMonte[bestMoveIndex]);
+            game.load(boardBeforeMonte);
+        }
+
+        //create a object for every root move
+        function rootEvaluation(oSent, eSent) {
+            let origin = oSent;
+            let evaluation = eSent;
+            let positionsToCheckLeft = 0;
+            this.updateMovesToCheck = function(evaluationPool, positionsToCheck) {
+                if (evaluation > 0) {
+                    positionsToCheckLeft = Math.round((evaluation / evaluationPool * positionsToCheck));
+                }
+                if (positionsToCheckLeft <= 0) {
+                    positionsToCheckLeft = 1;
+                }
+            }
+            this.removeAMove = function() {
+                positionsToCheckLeft--;
+            }
+            this.getPositionsToCheckLeft = function() {
+                return positionsToCheckLeft;
+            }
+            this.getOrigin = function() {
+                return origin;
+            }
+            this.getEvaluation = function() {
+                return evaluation;
+            }
+        }
+        //object for leaf moves
+        function leafEvaluation(oSent, currentBoardSent, positionsToCheckLeftSent) {
+            let leafIndex = leafMoves.length;
+            let origin = oSent;
+            let allPossibleMovesFromHere = [];
+            let allEvaluations = [];
+            let currentBoard = currentBoardSent;
+            let positionsToCheckLeft = positionsToCheckLeftSent;
+            let evaluationSum = 0;
+            //updates the best move if one is found or creates a new leaf
+            this.getPredictions = async function() {
+                console.log(leafIndex, leafMoves.length - 1, " best move so far has the index: ", bestMoveIndex);
+                // ... // get all the moves
+                game.load(currentBoard);
+                allPossibleMovesFromHere = game.moves();
+                // ... //
+
+                // ... // get a prediction for all the moves
+                for (let i = 0; i < allPossibleMovesFromHere.length; i++) {
+                    game.load(currentBoard);
+                    game.move(allPossibleMovesFromHere[i]);
+                    let move = tf.tensor2d([getNeuralInputFromFen()]);
+                    const promise = await model.predict(move);
+                    //get the reults from the promise by using parsefloat on the promise after using dataSync to make sure the order is right
+                    let results = parseFloat(promise.dataSync());
+                    if (results < 0) {
+                        results = 0;
+                    }
+
+                    allEvaluations.push(results);
+                    evaluationSum += results;
+
+                    tf.dispose(move);
+                    tf.dispose(promise);
+                }
+
+                // ... //
+
+                // ... // returnMoveOrCreateNewLeaf();
+                //console.log("positionsToCheckLeft: ", positionsToCheckLeft)
+                if (positionsToCheckLeft < 1) {
+                    for (var i = 0; i < allEvaluations.length; i++) {
+                        if (allEvaluations[i] > bestMoveValue) {
+                            bestMoveIndex = origin;
+                            bestMoveValue = allEvaluations[i];
+                        }
+                    }
+                } else { //create new leaf
+                    for (var i = 0; i < allPossibleMovesFromHere.length; i++) {
+                        //console.log(allEvaluations[i]/evaluationSum*positionsToCheckLeft);
+                        game.load(currentBoard);
+                        game.move(allPossibleMovesFromHere[i]);
+                        let movesForleafLeft = parseInt(allEvaluations[i] / evaluationSum * positionsToCheckLeft);
+                        leafMoves.push(new leafEvaluation(origin, game.fen(), movesForleafLeft));
+                    }
+                }
+                // ... //
+                if (leafIndex == leafMoves.length - 1) {
+                    bestMoveFound();
+                } else {
+                    leafMoves[leafIndex + 1].getPredictions();
+                }
+            }
+        }
+
+        function getNeuralInputFromFen() {
+            let newBoardAsArray = fenToArrayFunc(game.fen()); //translates the FEN board into an array
+            //includes allowed castles and whose turn it is into the final array that will be the input for the NN
+            let newBoardAsArrayNN = [];
+            //finish the neuralnet final array
+            for (var z = 0; z < 64; z++) {
+                newBoardAsArrayNN[z] = newBoardAsArray[z];
+            }
+            let lastPartOfArray = "";
+            for (var z = 64; z < newBoardAsArrayNN.length; z++) {
+                lastPartOfArray += newBoardAsArrayNN[z];
+            }
+            if (lastPartOfArray.indexOf("w") != -1) {
+                newBoardAsArrayNN.push(1);
+            } //else it is black and value is 0
+            else {
+                newBoardAsArrayNN.push(0);
+            }
+            if (lastPartOfArray.indexOf("K") != -1) {
+                newBoardAsArrayNN.push(1);
+            } else {
+                newBoardAsArrayNN.push(0);
+            }
+            if (lastPartOfArray.indexOf("Q") != -1) {
+                newBoardAsArrayNN.push(1);
+            } else {
+                newBoardAsArrayNN.push(0);
+            }
+            if (lastPartOfArray.indexOf("k") != -1) {
+                newBoardAsArrayNN.push(1);
+            } else {
+                newBoardAsArrayNN.push(0);
+            }
+            if (lastPartOfArray.indexOf("q") != -1) {
+                newBoardAsArrayNN.push(1);
+            } else {
+                newBoardAsArrayNN.push(0);
+            }
+
+            return newBoardAsArrayNN;
+        }
+
+        document.getElementById("playBestMove").addEventListener("click", playBestMoveFunction);
+
+        function playBestMoveFunction() {
+            game.move(possibleMovesMonte[bestMoveIndex]);
+            board = Chessboard('board', game.fen());
+        }
+
+        document.getElementById("predictBestMove").addEventListener("click", predictBestMoveFunction);
+
+        function predictBestMoveFunction() {
+            monteCarloTreeSearch();
+        }
+    </script>
+</body>
+
+</html>

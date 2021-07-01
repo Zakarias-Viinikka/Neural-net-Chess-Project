@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+	<meta charset="utf-8">
+	<title> test2test</title>
+	<link rel="stylesheet" href="css/chessboard-1.0.0.min.css">
+	<style type="text/css">
+		body {
+			background-color: lightgreen;
+		}
+	</style>
+</head>
+<body id="body">
+	<!-- selfmade scripts -->
+	<script src="nnScriptsAndFiles/fenToArray.js"></script>
+	<script src="nnScriptsAndFiles/arrayToFen.js"></script>
+	<script src="nnScriptsAndFiles/pgnToArray.js"></script>
+	<!-- jquery -->
+	<script src="nnScriptsAndFiles/jquery-3.5.1.min.js"></script>
+	<!-- chessboard.js -->
+	<script src="nnScriptsAndFiles/chessboard-1.0.0.min.js"></script>
+	<!-- chess.js -->
+	<script src="nnScriptsAndFiles/chess.js"></script>
+	<!-- p5.js -->
+	<script src="nnScriptsAndFiles/p5/p5.min.js"></script>
+    <script src="nnScriptsAndFiles/p5/addons/p5.dom.min.js"></script>
+    <script src="nnScriptsAndFiles/p5/addons/p5.sound.min.js"></script>
+    <!-- tensorflow.js -->
+    <!--<script src="tensorflowjs/tfjs/dist/tf.js"></script>--><!-- use .min later maybe dunno -->
+   	<script src='https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js'></script>
+
+	<div id="board" style="width: 400px"></div>
+	<button id="startTheTraining">Train</button>
+	<script>
+
+		var game = new Chess();
+		let board = Chessboard('board', 'start');
+		let neuralNetFinalArray = [];
+
+		let v = 0;
+		let carlsenGame = "1.e4 e5 2.Nf3 Nf6 3.Nxe5 d6 4.Nf3 Nxe4 5.d4 d5 6.Bd3 Nc6 7.O-O Be7 8.c3 Bg4 9.Nbd2 Nxd2 10.Bxd2 O-O 11.Bf4 Bd6 12.Bxd6 cxd6 13.Re1 Qf6 14.Bc2 Na5 15.Bb3 Nc4 16.Bxc4 dxc4 17.Qe2 b5 18.Qe4 Bxf3 19.Qxf3 Qxf3 20.gxf3 Rfe8 21.Kf1 g5 22.Rxe8+ Rxe8 23.Re1 Rxe1+ 24.Kxe1 Kg7 25.Kf1 Kf6 26.Ke2 Kf5 27.Ke3 d5 28.f4 g4 29.f3 h5  0-1 ";
+		let carlsenAsArray = [];
+
+		const hiddenLayer1 = tf.layers.dense({
+		    inputShape: 69,
+		    units: 10,
+		    activation: 'sigmoid'
+		});
+
+		const outputLayer = tf.layers.dense({
+			units: 1,
+			activation: 'sigmoid'
+		});
+
+		const model = tf.sequential();
+		model.add(hiddenLayer1);
+		model.add(outputLayer);
+		model.compile({
+			optimizer: 'sgd',
+			loss: 'meanSquaredError'
+		})
+
+		function setup() {
+		    noLoop();
+		    carlsenAsArray = separateIntoMovesJs(carlsenGame);
+		    while(carlsenAsArray[carlsenAsArray.length-1] == "") {
+		    	carlsenAsArray.pop();
+		    }
+		    console.log(carlsenAsArray);
+		}
+
+		function draw() {
+
+		}
+
+		function fetchGameAndTrain() {
+			createTrainingData();
+		    console.log("Finished adding training data.");
+		    console.log(nn);
+		}
+
+		function createTrainingData(gameIndex) {
+			game.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');//starting board
+			let possibleMoves = [];
+			let originalBoard = "";
+			let futureBoard = "";
+			let trainingData = [];
+			
+			for(let i = 0; i < carlsenAsArray.length; i++){//for every move that has been made in a game
+				possibleMoves = game.moves();
+				originalBoard = game.fen();
+				//add training data//
+				for (var v = 0; v < possibleMoves.length; v++) {//for every possible move for a particular board state
+					game.move(possibleMoves[v]);//creates the new scenario
+					let possibleBoard = game.fen();//gets the board as FEN from chess.js
+					let newBoardAsArray = fenToArrayFunc(game.fen());//translates the FEN board into an array
+
+					//includes allowed castles and whose turn it is into the final array that will be the input for the NN
+					let newBoardAsArrayNN = [];
+					//finish the neuralnet final array
+					for (var z = 0; z < 64; z++) {
+						newBoardAsArrayNN[z] = newBoardAsArray[z];
+					}
+					let lastPartOfArray = "";
+					for (var z = 64; z < newBoardAsArrayNN.length; z++) {
+						lastPartOfArray += newBoardAsArrayNN[z];
+					}
+					if (lastPartOfArray.indexOf("w") != -1) {
+						newBoardAsArrayNN.push(1);
+					}//else it is black and value is 0
+					else {
+						newBoardAsArrayNN.push(0);
+					}
+					if (lastPartOfArray.indexOf("K") != -1) {
+						newBoardAsArrayNN.push(1);
+					} else {newBoardAsArrayNN.push(0); }
+					if (lastPartOfArray.indexOf("Q") != -1) {
+						newBoardAsArrayNN.push(1);
+					} else {newBoardAsArrayNN.push(0); }
+					if (lastPartOfArray.indexOf("k") != -1) {
+						newBoardAsArrayNN.push(1);
+					} else { newBoardAsArrayNN.push(0); }
+					if (lastPartOfArray.indexOf("q") != -1) {
+						newBoardAsArrayNN.push(1);
+					} else { newBoardAsArrayNN.push(0); }
+					//Finished with the input array
+
+					
+					if (v == 0) {
+						//console.log(newBoardAsArrayNN.length);
+					}
+					//adds training data
+					if(possibleMoves[v] == carlsenAsArray[i]){//checks if the move is the one that was made in the original game
+			    	    trainTheModel(newBoardAsArrayNN, 1);
+			    	}else {
+			    	   	let input = newBoardAsArrayNN;
+			    	    trainTheModel(newBoardAsArrayNN, -1);
+			    	}
+
+					//resets board
+					game.load(originalBoard);
+				}
+				//updates board for next move
+				game.move(carlsenAsArray[i]);
+		    }
+		    finishedTraining();
+		}
+
+		async function trainTheModel(prediction, target) {
+			const response = await model.fit([prediction], [target]/*, config?*/);
+			console.log(response.history.loss[0]);
+		}
+
+		function finishedTraining() {
+			console.log('Training has been finished!');
+			let testArr = [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 5, 0, 1, 0, 0, 1, 7, 0, 7, 1, 0, 0, 0, 7, 0, 11, 7, 0, 0, 7, 7, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];	
+			console.log(model.predict([testArr]));
+		}
+
+		document.getElementById("startTheTraining").addEventListener("click", startTraining);
+		function startTraining() {
+		    createTrainingData();
+		}
+	</script>
+</body>
+</html>
