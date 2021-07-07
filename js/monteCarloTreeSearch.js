@@ -1,4 +1,8 @@
-async function monteCarloTreeSearch(depth) {
+let monteModel;
+async function monteCarloTreeSearch(depth, _model) {
+    let monteModel = _model;
+    console.log(monteModel);
+    monteBoard = new Chess();
     boardBeforeMonte = game.fen(); //saves the board before anything is done
     possibleMovesMonte = game.moves();
     let originalBoard = game.fen();
@@ -8,8 +12,8 @@ async function monteCarloTreeSearch(depth) {
     for (var i = 0; i < possibleMovesMonte.length; i++) {
         game.move(possibleMovesMonte[i]);
 
-        let move = tf.tensor2d([getNeuralInputFromFen()]);
-        let promise = await model.predict(move); // the promise stores the predict data once the model is done predicting
+        let move = tf.tensor2d([ChessboardToNNInput()]);
+        let promise = await monteModel.predict(move); // the promise stores the predict data once the model is done predicting
         //console.log(promise[0]);
         //rootMoves.push(positionEvaluation())
         let results = parseFloat(promise.dataSync());
@@ -35,9 +39,9 @@ async function monteCarloTreeSearch(depth) {
     sortMovesByValueArr.sort(compareWithSplit);
     //remove the extra moves handed out
     let removeMoveIndex = sortMovesByValueArr.length;
-    console.log("Amount of moves handed out: ", totalMovesHandedOut, "Limit given: ", depth);
+    console.log("Amount of moves handed out: ", totalMovesHandedOut, "depth: ", depth);
     while (totalMovesHandedOut > depth) {
-        console.log("Amount of moves handed out: ", totalMovesHandedOut, "Limit given: ", depth);
+        console.log("Amount of moves handed out: ", totalMovesHandedOut, "depth: ", depth);
         rootMoves[sortMovesByValueArr[removeMoveIndex - 1].split(",")[0]].removeAMove();
         removeMoveIndex--;
         if (removeMoveIndex - 1 < 0) {
@@ -115,8 +119,8 @@ function leafEvaluation(oSent, currentBoardSent, positionsToCheckLeftSent) {
         for (let i = 0; i < allPossibleMovesFromHere.length; i++) {
             game.load(currentBoard);
             game.move(allPossibleMovesFromHere[i]);
-            let move = tf.tensor2d([getNeuralInputFromFen()]);
-            const promise = await model.predict(move);
+            let move = tf.tensor2d([ChessboardToNNInput()]);
+            const promise = await monteModel.predict(move);
             //get the reults from the promise by using parsefloat on the promise after using dataSync to make sure the order is right
             let results = parseFloat(promise.dataSync());
             if (results < 0) {

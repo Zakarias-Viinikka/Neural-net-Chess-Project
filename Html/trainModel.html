@@ -9,29 +9,39 @@
         body {
             background-color: lightgreen;
         }
+        
+        #boardContainer {
+            display: table;
+        }
+        
+        #board {
+            float: left;
+            display: block;
+        }
+        
+        #x {
+            display: block;
+            float: left;
+            font-size: 30px;
+        }
+        
+        button {}
     </style>
 </head>
 
 <body id="body">
-    <!-- own scripts -->
-    <script src="../js/fenToArray.js"></script>
-    <script src="../js/arrayToFen.js"></script>
-    <script src="../js/pgnToArray.js"></script>
-    <!-- jquery -->
-    <script src="../js/jquery-3.5.1.min.js"></script>
-    <!-- chessboard.js -->
-    <script src="../js/chessboard-1.0.0.min.js"></script>
-    <!-- chess.js -->
-    <script src="../js/chess.js"></script>
-    <!-- tensorflow.js -->
-    <!--<script src="tensorflowjs/tfjs/dist/tf.js"></script>-->
-    <!-- use .min later maybe dunno -->
-    <script src='../js/tf.min.js'></script>
-
-    <div id="board" style="width: 400px"></div>
-    <button id="startTheTraining">Train</button>
+    <div id="boardContainer">
+        <div id="board" style="width: 400px"></div>
+        <div id="x">X</div>
+        <br> Depth:
+        <span id="depthSpan">1</span>
+        <br>
+        <input id="depthSlider" type="range" min="1" max="25" value="0">
+    </div>
+    <br>
+    <button id="startTheTraining">Start Training</button>
     <button id="CreateNewModels">Create new Model</button>
-    <button id="startTheTraining">Load Model</button>
+    <button id="loadModel">Load Model</button>
     <button id="playBestMove">Play best Move</button>
     <button id="predictBestMove">Predict best move</button>
 
@@ -39,7 +49,22 @@
 
     <button id="updateBoard">Update Board</button>
 
+    <!-- jquery -->
+    <script src="../js/jquery-3.5.1.min.js"></script>
+    <!-- chessboard.js -->
+    <script src="../js/chessboard-1.0.0.min.js"></script>
+    <!-- chess.js -->
+    <script src="../js/chess.js"></script>
+    <!-- tensorflow.js -->
+    <script src='../js/tf.min.js'></script>
+    <!-- own scripts -->
+    <script src="../js/ChessboardToNNInput.js"></script>
+    <script src="../js/fenToArray.js"></script>
+    <script src="../js/arrayToFen.js"></script>
+    <script src="../js/pgnToArray.js"></script>
+    <script src="../js/RandomNormalDistribution.js"></script>
     <script src="../js/NeuralNetwork.js"></script>
+    <script src="../js/NeuralNetworkTrainer.js"></script>
     <script src="../js/monteCarloTreeSearch.js"></script>
     <script>
         let leafMoves = []; //array for storing the leaf moves in the monte carlo tree search algorithm
@@ -47,58 +72,16 @@
         let bestMoveValue = -1; //stores the value for the best prediction so far
         let possibleMovesMonte; //possibleMoves but as a global variable for the monte carlo tree search
         let boardBeforeMonte;
+        let NNTrainer;
 
+        let depth = 1;
 
         var game = new Chess();
         let board = Chessboard('board', 'start');
         let neuralNetFinalArray = [];
 
-        let models = [];
+        let x;
 
-        /*async function createTrainingData(gameIndex) {
-            game.load('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'); //starting board
-            let possibleMoves = [];
-            let originalBoard = "";
-            let futureBoard = "";
-            let trainingData = [];
-
-            for (let i = 0; i < carlsenAsArray.length; i++) { //for every move that has been made in a game
-                if (trainingLimitForTesting > 0) {
-                    if (i >= trainingLimitForTesting) {
-                        i = carlsenAsArray.length;
-                    }
-                }
-                possibleMoves = game.moves();
-                originalBoard = game.fen();
-                //add training data//
-                for (var v = 0; v < possibleMoves.length; v++) { //for every possible move for a particular board state
-                    let possibleBoard = game.fen(); //gets the board as FEN from chess.js
-                    let input = getNeuralInputFromFen();
-                    //Finished with the input array
-
-                    //adds training data
-                    let tfinput = tf.tensor2d([input])
-                    let target;
-
-                    if (possibleMoves[v] == carlsenAsArray[i]) { //checks if the move is the one that was made in the original game
-                        target = tf.tensor1d([1]);
-                    } else {
-                        target = tf.tensor1d([-1]);
-                    }
-                    const response = await model.fit([tfinput], [target] );
-                    //console.log(response.history.loss[0]);
-                    tf.dispose(tfinput);
-                    tf.dispose(target);
-                    //resets board
-                    game.load(originalBoard);
-                }
-                //updates board for next move
-                game.move(carlsenAsArray[i]);
-            }
-            
-            finishedTraining();
-        }
-        */
         async function trainTheModel() {
             //do evolution
         }
@@ -107,15 +90,44 @@
             CreateNewModels();
         });
 
-        async function CreateNewModels() {
-            for (let index = 0; index < 10; index++) {
-                let tempModel = new NeuralNet();
-                await models.push(tempModel);
-                await models[0].testModel();
-                console.log("created model");
+        document.getElementById("startTheTraining").addEventListener("click", () => {
+            if (NNTrainer != null) {
+
+                let btn = document.getElementById("startTheTraining");
+                if (btn.innerHTML == "Start Training") {
+                    btn.innerHTML = "Pause Training";
+                    NNTrainer.keepTraining = false;
+                } else {
+                    NNTrainer.keepTraining = true;
+                    btn.innerHTML = "Start Training";
+                }
             }
+        })
+
+        async function CreateNewModels() {
+            let models = [];
+            for (let index = 0; index < 10; index++) {
+                models.push(await createModel().then(r => r));
+            }
+            console.log(models);
+            NNTrainer = new NeuralNetworkTrainer(models, new Chess(), depth);
+            for (let index = 0; index < NNTrainer.models.length; index++) {
+                await models[0].mutate(0.5);
+            }
+            /* x = new NeuralNet();
+            for (i = 0; i < 1000; i++) {
+                await test().then(r => console.log(r));
+            } */
+            await playMatch(NNTrainer.models[0], NNTrainer.models[1], new Chess());
+            console.log(NNTrainer.modelTrainingScore[0] + NNTrainer.modelTrainingScore[1]);
         }
 
+
+        async function test() {
+            await x.mutate(NNTrainer.rate);
+            return x.model.weights[0].val.toLocaleString();
+
+        }
 
 
 
@@ -126,15 +138,22 @@
             board = Chessboard('board', game.fen());
         }
 
-        document.getElementById("predictBestMove").addEventListener("click", predictBestMoveFunction);
-
-        function predictBestMoveFunction() {
-            monteCarloTreeSearch(5);
-        }
+        document.getElementById("predictBestMove").addEventListener("click", () => {
+            monteCarloTreeSearch(depth);
+        });
 
         document.getElementById("updateBoard").addEventListener("click", () => {
             board = Chessboard('board', game.fen());
         });
+
+        var slider = document.getElementById("depthSlider");
+        var depthSpan = document.getElementById("depthSpan");
+        depthSpan.innerHTML = slider.value;
+
+        slider.oninput = function() {
+            depthSpan.innerHTML = this.value;
+            NeuralNetworkTrainer.depth = this.value;
+        }
     </script>
 </body>
 

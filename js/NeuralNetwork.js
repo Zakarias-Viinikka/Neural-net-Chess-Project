@@ -1,16 +1,72 @@
 class NeuralNet {
     constructor() {
         this.model = this.createModel();
+        this._zig = new Ziggurat();
     }
+
 
     testModel() {
         let fenTest = "rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 1";
         game.load(fenTest);
         board = Chessboard('board', fenTest);
         let testArr = [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 5, 0, 1, 0, 0, 1, 7, 0, 7, 1, 0, 0, 0, 7, 0, 11, 7, 0, 0, 7, 7, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        let tfTestArr = tf.tensor2d([testArr]);
-        this.model.predict([tfTestArr]).print();
-        tf.dispose(tfTestArr);
+        console.log(this.predict(testArr));
+    }
+
+    predict(arr) {
+        let tfArr = tf.tensor2d([arr]);
+        let result = this.model.predict([tfArr]).dataSync()[0];
+        tf.dispose(tfArr);
+        return result;
+    }
+
+    cloneModel() {
+        let newModel = this.createModel();
+        newModel.setWeights(this.model.getWeights());
+        return newModel;
+    }
+
+    //weights change to a random weight between -1 and 1
+    extremeMutate(rate) {
+        tf.tidy(() => {
+            const weights = this.model.getWeights();
+            const mutatedWeights = [];
+            for (let i = 0; i < weights.length; i++) {
+                let tensor = weights[i];
+                let shape = weights[i].shape;
+                let values = tensor.dataSync().slice();
+                for (let j = 0; j < values.length; j++) {
+                    if (Math.random() < rate) {
+                        let w = values[j];
+                        values[j] = this._zig.nextGaussian();
+                    }
+                }
+                let newTensor = tf.tensor(values, shape);
+                mutatedWeights[i] = newTensor;
+            }
+            this.model.setWeights(mutatedWeights);
+        });
+    }
+
+    mutate(rate) {
+        tf.tidy(() => {
+            const weights = this.model.getWeights();
+            const mutatedWeights = [];
+            for (let i = 0; i < weights.length; i++) {
+                let tensor = weights[i];
+                let shape = weights[i].shape;
+                let values = tensor.dataSync().slice();
+                for (let j = 0; j < values.length; j++) {
+                    if (Math.random() < rate) {
+                        let w = values[j];
+                        values[j] = this._zig.slowTraining(w);
+                    }
+                }
+                let newTensor = tf.tensor(values, shape);
+                mutatedWeights[i] = newTensor;
+            }
+            this.model.setWeights(mutatedWeights);
+        });
     }
 
     createModel() {
@@ -21,38 +77,32 @@ class NeuralNet {
         });
 
         const hiddenLayer2 = tf.layers.dense({
-            //inputShape: 69,
             units: 150,
             activation: 'relu'
         });
 
         const hiddenLayer3 = tf.layers.dense({
-            //inputShape: 150,
             units: 100,
             activation: 'relu'
         });
 
         const hiddenLayer4 = tf.layers.dense({
-            //inputShape: 100,
             units: 80,
             activation: 'relu'
         });
 
         const hiddenLayer5 = tf.layers.dense({
-            //inputShape: 80,
             units: 60,
             activation: 'relu'
         });
 
         const hiddenLayer6 = tf.layers.dense({
-            //inputShape: 60,
             units: 50,
             activation: 'relu'
         });
 
 
         const hiddenLayer7 = tf.layers.dense({
-            //inputShape: 50,
             units: 25,
             activation: 'relu'
         });
