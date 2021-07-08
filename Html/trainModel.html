@@ -19,10 +19,10 @@
             display: block;
         }
         
-        #x {
+        #moveMade {
             display: block;
             float: left;
-            font-size: 30px;
+            font-size: 50px;
         }
         
         button {}
@@ -32,7 +32,7 @@
 <body id="body">
     <div id="boardContainer">
         <div id="board" style="width: 400px"></div>
-        <div id="x">X</div>
+        <div id="moveMade">X</div>
         <br> Depth:
         <span id="depthSpan">1</span>
         <br>
@@ -40,8 +40,9 @@
     </div>
     <br>
     <button id="startTheTraining">Start Training</button>
-    <button id="CreateNewModels">Create new Model</button>
+    <button id="CreateNewModels">Create new Models</button>
     <button id="loadModel">Load Model</button>
+    <br>
     <button id="playBestMove">Play best Move</button>
     <button id="predictBestMove">Predict best move</button>
 
@@ -67,69 +68,56 @@
     <script src="../js/NeuralNetworkTrainer.js"></script>
     <script src="../js/monteCarloTreeSearch.js"></script>
     <script>
-        let leafMoves = []; //array for storing the leaf moves in the monte carlo tree search algorithm
-        let bestMoveIndex = 0; //stores the index for the best root move so far
-        let bestMoveValue = -1; //stores the value for the best prediction so far
-        let possibleMovesMonte; //possibleMoves but as a global variable for the monte carlo tree search
-        let boardBeforeMonte;
         let NNTrainer;
 
-        let depth = 1;
+        let depth = document.getElementById("depthSlider").value;
 
         var game = new Chess();
         let board = Chessboard('board', 'start');
-        let neuralNetFinalArray = [];
 
-        let x;
-
-        async function trainTheModel() {
-            //do evolution
-        }
-
-        document.getElementById("CreateNewModels").addEventListener("click", () => {
-            CreateNewModels();
+        document.getElementById("CreateNewModels").addEventListener("click", async() => {
+            NNTrainer = new NeuralNetworkTrainer(new Chess(), depth);
+            let models = await CreateNewModels();
+            for (let i = 0; i < models.length; i++) {
+                NNTrainer.addModelToTrainer(models[i]);
+            }
+            await mutateModels();
+            //NNTrainer.models[0].model.getWeights()[0].print();
+            console.log("Created Models");
         });
 
-        document.getElementById("startTheTraining").addEventListener("click", () => {
-            if (NNTrainer != null) {
+        async function mutateModels() {
+            for (let index = 0; index < NNTrainer.models.length; index++) {
+                NNTrainer.models[0].mutate(0.5);
+            }
+        }
 
+        document.getElementById("startTheTraining").addEventListener("click", async() => {
+            if (NNTrainer != null) {
                 let btn = document.getElementById("startTheTraining");
                 if (btn.innerHTML == "Start Training") {
                     btn.innerHTML = "Pause Training";
-                    NNTrainer.keepTraining = false;
-                } else {
                     NNTrainer.keepTraining = true;
+                    NNTrainer.startTheTraining;
+                } else {
                     btn.innerHTML = "Start Training";
+                    setTimeout(() => {
+                        NNTrainer.keepTraining = false;
+                    }, 100);
+
                 }
+
+                NNTrainer.startTraining(true);
             }
         })
 
         async function CreateNewModels() {
-            let models = [];
+            let models = []
             for (let index = 0; index < 10; index++) {
-                models.push(await createModel().then(r => r));
+                models.push(new NeuralNet());
             }
-            console.log(models);
-            NNTrainer = new NeuralNetworkTrainer(models, new Chess(), depth);
-            for (let index = 0; index < NNTrainer.models.length; index++) {
-                await models[0].mutate(0.5);
-            }
-            /* x = new NeuralNet();
-            for (i = 0; i < 1000; i++) {
-                await test().then(r => console.log(r));
-            } */
-            await playMatch(NNTrainer.models[0], NNTrainer.models[1], new Chess());
-            console.log(NNTrainer.modelTrainingScore[0] + NNTrainer.modelTrainingScore[1]);
+            return models;
         }
-
-
-        async function test() {
-            await x.mutate(NNTrainer.rate);
-            return x.model.weights[0].val.toLocaleString();
-
-        }
-
-
 
         document.getElementById("playBestMove").addEventListener("click", playBestMoveFunction);
 
@@ -139,7 +127,7 @@
         }
 
         document.getElementById("predictBestMove").addEventListener("click", () => {
-            monteCarloTreeSearch(depth);
+            monteCarloTreeSearch(depth, NNTrainer.models[0].model)
         });
 
         document.getElementById("updateBoard").addEventListener("click", () => {
@@ -152,7 +140,9 @@
 
         slider.oninput = function() {
             depthSpan.innerHTML = this.value;
-            NeuralNetworkTrainer.depth = this.value;
+            if (NNTrainer != null) {
+                NNTrainer.depth = this.value;
+            }
         }
     </script>
 </body>

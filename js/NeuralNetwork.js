@@ -4,15 +4,6 @@ class NeuralNet {
         this._zig = new Ziggurat();
     }
 
-
-    testModel() {
-        let fenTest = "rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 1";
-        game.load(fenTest);
-        board = Chessboard('board', fenTest);
-        let testArr = [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 5, 0, 1, 0, 0, 1, 7, 0, 7, 1, 0, 0, 0, 7, 0, 11, 7, 0, 0, 7, 7, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        console.log(this.predict(testArr));
-    }
-
     predict(arr) {
         let tfArr = tf.tensor2d([arr]);
         let result = this.model.predict([tfArr]).dataSync()[0];
