@@ -7,7 +7,6 @@ let boardBeforeMonte;
 let bestMove;
 
 async function monteCarloTreeSearch(depth, _model, _chess) {
-    console.log("starting monte carlo tree search");
     monteModel = _model;
     boardBeforeMonte = _chess.fen(); //saves the board before anything is done
     monteBoard = _chess;
@@ -21,7 +20,6 @@ async function monteCarloTreeSearch(depth, _model, _chess) {
 
         let move = tf.tensor2d([ChessboardToNNInput()]);
         let promise = await monteModel.predict(move); // the promise stores the predict data once the model is done predicting
-        //console.log(promise[0]);
         //rootMoves.push(positionEvaluation())
         let results = parseFloat(promise.dataSync());
         if (results > 0) {
@@ -39,16 +37,13 @@ async function monteCarloTreeSearch(depth, _model, _chess) {
     for (var i = 0; i < rootMoves.length; i++) {
         rootMoves[i].updateMovesToCheck(evaluationPool, depth);
         totalMovesHandedOut += rootMoves[i].getPositionsToCheckLeft();
-        //console.log("getPositionsToCheckLeft gives: ", rootMoves[i].getPositionsToCheckLeft());
         sortMovesByValueArr.push(i + "," + rootMoves[i].getEvaluation());
     }
     //sort moves by value
     sortMovesByValueArr.sort(compareWithSplit);
     //remove the extra moves handed out
     let removeMoveIndex = sortMovesByValueArr.length;
-    //console.log("Amount of moves handed out: ", totalMovesHandedOut, "depth: ", depth);
     while (totalMovesHandedOut > depth) {
-        //console.log("Amount of moves handed out: ", totalMovesHandedOut, "depth: ", depth);
         rootMoves[sortMovesByValueArr[removeMoveIndex - 1].split(",")[0]].removeAMove();
         removeMoveIndex--;
         if (removeMoveIndex - 1 < 0) {
@@ -63,7 +58,6 @@ async function monteCarloTreeSearch(depth, _model, _chess) {
         //i is the root of the leaf
         leafMoves.push(new leafEvaluation(i, monteBoard.fen(), rootMoves[i].getPositionsToCheckLeft()));
     }
-    console.log("Moves to go through: " + leafMoves.length)
     await goThroughLeafMoves();
     monteBoard.load(originalBoard);
     bestMoveFound();
@@ -86,10 +80,6 @@ function bestMoveFound() {
     leafMoves = [];
     bestMoveIndex = 0;
     bestMoveValue = -1;
-    //console.log(" - - - Monte Carlo")
-    console.log(" Best Move Found ")
-        //console.log("Amount of tensors: " + tf.memory().numTensors);
-        //console.log(" - - - Monte Carlo")
     bestMove = possibleMovesMonte[bestMoveIndex];
 }
 
@@ -133,7 +123,6 @@ function leafEvaluation(oSent, currentBoardSent, positionsToCheckLeftSent) {
         let promise = new Promise(() => {
 
             })
-            //console.log(leafIndex, leafMoves.length - 1, " best move so far has the index: ", bestMoveIndex);
             // ... // get all the moves
         monteBoard.load(currentBoard);
         allPossibleMovesFromHere = monteBoard.moves();
@@ -161,7 +150,6 @@ function leafEvaluation(oSent, currentBoardSent, positionsToCheckLeftSent) {
         // ... //
 
         // ... // returnMoveOrCreateNewLeaf();
-        //console.log("positionsToCheckLeft: ", positionsToCheckLeft)
         if (positionsToCheckLeft < 1) {
             for (var i = 0; i < allEvaluations.length; i++) {
                 if (allEvaluations[i] > bestMoveValue) {
@@ -171,7 +159,6 @@ function leafEvaluation(oSent, currentBoardSent, positionsToCheckLeftSent) {
             }
         } else { //create new leaf
             for (var i = 0; i < allPossibleMovesFromHere.length; i++) {
-                //console.log(allEvaluations[i]/evaluationSum*positionsToCheckLeft);
                 monteBoard.load(currentBoard);
                 monteBoard.move(allPossibleMovesFromHere[i]);
                 let movesForleafLeft = parseInt(allEvaluations[i] / evaluationSum * positionsToCheckLeft);

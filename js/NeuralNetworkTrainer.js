@@ -16,7 +16,7 @@ class NeuralNetworkTrainer {
         if (localStorage.getItem("timeSpent") == null) {
             localStorage.setItem("timeSpent", "0");
             //updates every evolution
-            localStorage.setItem("timeLastLogged", new Date());
+            localStorage.setItem("timeLastLogged", new Date().getTime());
         }
     }
 
@@ -30,7 +30,7 @@ class NeuralNetworkTrainer {
     }
 
     async startTraining() {
-        this.timeout(1000); // this is important...
+
         this.keepTraining = true;
         let modelId = 0;
         let opponentModelId = 1;
@@ -38,14 +38,10 @@ class NeuralNetworkTrainer {
         let white = 0;
         console.log("Started Training");
 
-        for (let i = 0; i < this.models.length; i++) {
+        for (let i = 0; i < parseInt(this.models.length / 2); i++) {
             white = Math.floor(Math.random() * 2);
             modelId = i;
-            opponentModelId = parseInt(Math.random() * 10);
-
-            while (opponentModelId == modelId) {
-                opponentModelId = this.models[parseInt(Math.random() * 10)];
-            }
+            opponentModelId = this.models.length - i;
 
             if (white == 1) {
                 loser = await this.playMatch(this.models[modelId], this.models[opponentModelId], this.chess)
@@ -58,7 +54,7 @@ class NeuralNetworkTrainer {
             if (!this.keepTraining) {
                 break;
             }
-            console.log("Match concluded.");
+            console.log(`Match number ${i} concluded.`);
 
             let matchesPlayed = parseInt(localStorage.getItem("matchesPlayed"));
             matchesPlayed++;
@@ -69,26 +65,28 @@ class NeuralNetworkTrainer {
         console.log("memory: " + tf.memory().numTensors)
 
         await this.evolution();
-        await this.saveModels().then(
-            console.log("saved models"));
+        await this.saveModels();
 
         this.resetModelScores();
 
         if (this.keepTraining) {
-            this.startTraining();
+            await this.startTraining();
         }
     }
 
     async saveModels() {
-        for (let i = 0; i < 10 /*this.models.length*/ ; i++) {
-            let savePath = 'localstorage://Model' + i
-            const saveResult = await this.models[i].model.save(savePath, { requestInit: { method: 'POST', headers: { 'class': 'Dog' } } })
+        if (this.keepTraining) {
+            for (let i = 0; i < 10 /*this.models.length*/ ; i++) {
+                let savePath = 'localstorage://Model' + i
+                const saveResult = await this.models[i].model.save(savePath, { requestInit: { method: 'POST', headers: { 'class': 'Dog' } } })
+            }
+            console.log("saved models")
         }
     }
 
     resetModelScores() {
         for (let i = 0; i < this.modelScores.length; i++) {
-            modelScores[i].score = 0;
+            this.modelScores[i].score = 0;
         }
     }
 
@@ -114,10 +112,8 @@ class NeuralNetworkTrainer {
         this.modelScores.sort(function(a, b) { return nnTrainer.getModelScore(b) - nnTrainer.getModelScore(a) });
 
         for (let i = 0; i < parseInt(this.models.length / 2); i++) {
-            if (this.getModelScore(i).score > 0) {
-                topHalf.push(i);
-                losers.push(models.length - i);
-            }
+            topHalf.push(i);
+            losers.push(models.length - i);
         }
 
         for (let i = 0; i < topHalf.length; i++) {
@@ -139,7 +135,7 @@ class NeuralNetworkTrainer {
         matchesPlayed++;
         localStorage.setItem("evolution", matchesPlayed);
 
-        let timeSpentOnTraining = new Date() - localStorage.getItem("timeLastLogged")
+        let timeSpentOnTraining = new Date().getTime - parseInt(localStorage.getItem("timeLastLogged"));
         localStorage.setItem("timeSpent", parseInt(localStorage.getItem("timeSpent")) + timeSpentOnTraining);
     }
 
@@ -173,7 +169,6 @@ class NeuralNetworkTrainer {
                 move = await monteCarloTreeSearch(this.depth, model1.model, this.chess);
             }
             (async() => {
-                console.log("move is: " + move);
                 this.chess.move(move);
                 board = Chessboard('board', this.chess.fen());
                 document.getElementById("moveMade").innerHTML = move;
@@ -215,7 +210,7 @@ class NeuralNetworkTrainer {
     async testResults(r, model1, model2, id1, id2) {
         let white = 0;
         for (let i = 0; i < this.models.length; i++) {
-            this.modelScores[i].score = 0;
+            this.updateModelScore(i).score = 0;
         }
         this.updateScores(id1, id2, r, white);
         console.log("id for white: " + white);
