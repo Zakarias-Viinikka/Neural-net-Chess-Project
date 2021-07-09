@@ -258,10 +258,12 @@ class NeuralNetworkTrainer {
         }
     }
 
-    monteCarloSpeedTester() {
+    async monteCarloSpeedTester() {
         let startTime = new Date().getTime();
-        monteCarloTreeSearch(1, this.models[0].model, new Chess());
+        this.chess.move(await monteCarloTreeSearch(1, this.models[5].model, this.chess));
         let timeDifference = new Date().getTime() - startTime;
+        board = Chessboard('board', this.chess.fen());
+        console.log(timeDifference);
     }
 }
 

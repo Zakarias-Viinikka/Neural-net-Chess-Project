@@ -4,13 +4,6 @@ class NeuralNet {
         this._zig = new Ziggurat();
     }
 
-    predict(arr) {
-        let tfArr = tf.tensor2d([arr]);
-        let result = this.model.predict([tfArr]).dataSync()[0];
-        tf.dispose(tfArr);
-        return result;
-    }
-
     cloneModel() {
         let newModel = this.createModel();
         newModel.setWeights(this.model.getWeights());
@@ -62,47 +55,14 @@ class NeuralNet {
     }
 
     createModel() {
-        const inputLayer = tf.layers.dense({
-            inputShape: 69,
-            units: 10,
-            activation: 'relu'
-        });
-
-        const hiddenLayer2 = tf.layers.dense({
-            units: 150,
-            activation: 'relu'
-        });
-
-        const hiddenLayer3 = tf.layers.dense({
-            units: 100,
-            activation: 'relu'
-        });
-
-        const hiddenLayer4 = tf.layers.dense({
-            units: 80,
-            activation: 'relu'
-        });
-
-        const hiddenLayer5 = tf.layers.dense({
-            units: 60,
-            activation: 'relu'
-        });
-
-        const hiddenLayer6 = tf.layers.dense({
-            units: 50,
-            activation: 'relu'
-        });
-
-
-        const hiddenLayer7 = tf.layers.dense({
-            units: 25,
-            activation: 'relu'
-        });
-
-        const outputLayer = tf.layers.dense({
-            units: 1,
-            activation: 'softmax'
-        });
+        const inputLayer = tf.layers.dense({ inputShape: 71, units: 10, activation: 'relu' });
+        const hiddenLayer2 = tf.layers.dense({ units: 150, activation: 'relu' });
+        const hiddenLayer3 = tf.layers.dense({ units: 100, activation: 'relu' });
+        const hiddenLayer4 = tf.layers.dense({ units: 80, activation: 'relu' });
+        const hiddenLayer5 = tf.layers.dense({ units: 60, activation: 'relu' });
+        const hiddenLayer6 = tf.layers.dense({ units: 50, activation: 'relu' });
+        const hiddenLayer7 = tf.layers.dense({ units: 25, activation: 'relu' });
+        const outputLayer = tf.layers.dense({ units: 1, activation: 'softmax' });
 
         const model = tf.sequential();
         model.add(inputLayer);
