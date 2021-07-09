@@ -68,13 +68,14 @@ class monteCarloTreeSearch {
 
     async evaluateMove(board) {
         let moveEvaluation;
-        let chessboardAsArray = await ChessboardToNNInput(this.chess).then(r => r);
+        let chessboardAsArray = await ChessboardToNNInput(this.chess);
+        let tfChessBoard = await tf.tensor2d([chessboardAsArray]);
         tf.tidy(() => {
 
-            let tfChessBoard = tf.tensor2d([chessboardAsArray]);
             let predictionResult = this.model.predict(tfChessBoard).dataSync()[0];
             moveEvaluation = predictionResult;
         })
+        tf.dispose(tfChessBoard)
         return moveEvaluation
     }
 }
