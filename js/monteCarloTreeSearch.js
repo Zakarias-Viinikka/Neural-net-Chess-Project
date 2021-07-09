@@ -82,8 +82,7 @@ function bestMoveFound() {
     bestMoveIndex = 0;
     bestMoveValue = -1;
     bestMove = possibleMovesMonte[bestMoveIndex];
-    console.log(bestMove);
-    console.log(`memory: ${tf.memory().numTensors}`);
+    console.log(`Best move has been found. memory: ${tf.memory().numTensors}`);
 }
 
 //create an object for every root move
@@ -118,23 +117,26 @@ function leafEvaluation(oSent, newBoard, positionsToCheckLeftSent) {
     let origin = oSent;
     let allPossibleMovesFromHere = [];
     let allEvaluations = [];
-    let currentBoard = newBoard;
+    let leafBoard = new Chess();
+    leafBoard.load(newBoard);
     let positionsToCheckLeft = positionsToCheckLeftSent;
     let evaluationSum = 0;
-    this.board = new Chess();
     //updates the best move if one is found or creates a new leaf
     this.getPredictions = async function() {
+        console.log(allEvaluations);
+        console.log(evaluationSum);
+        console.log(positionsToCheckLeft);
         // ... // get all the moves
-        this.board.load(newBoard);
-        allPossibleMovesFromHere = monteBoard.moves();
+        leafBoard.load(newBoard);
+        allPossibleMovesFromHere = leafBoard.moves();
         // ... //
 
         // ... // get a prediction for all the moves
         for (let i = 0; i < allPossibleMovesFromHere.length; i++) {
             tf.tidy(() => {
-                this.board.load(newBoard);
-                this.board.move(allPossibleMovesFromHere[i]);
-                let tfChessBoard = tf.tensor2d([ChessboardToNNInput(this.board)]);
+                leafBoard.load(newBoard);
+                leafBoard.move(allPossibleMovesFromHere[i]);
+                let tfChessBoard = tf.tensor2d([ChessboardToNNInput(leafBoard)]);
                 //get the reults from the promise by using parsefloat on the promise after using dataSync to make sure the order is right
                 let results = monteModel.predict(tfChessBoard).dataSync()[0];
                 if (results < 0) {
@@ -158,10 +160,10 @@ function leafEvaluation(oSent, newBoard, positionsToCheckLeftSent) {
             }
         } else { //create new leaf
             for (var i = 0; i < allPossibleMovesFromHere.length; i++) {
-                this.board.load(newBoard);
-                this.board.move(allPossibleMovesFromHere[i]);
+                leafBoard.load(newBoard);
+                leafBoard.move(allPossibleMovesFromHere[i]);
                 let movesForleafLeft = parseInt(allEvaluations[i] / evaluationSum * positionsToCheckLeft);
-                leafMoves.push(new leafEvaluation(origin, this.board.fen(), movesForleafLeft));
+                leafMoves.push(new leafEvaluation(origin, leafBoard.fen(), movesForleafLeft));
             }
         }
     }

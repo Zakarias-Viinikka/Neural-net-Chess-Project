@@ -76,7 +76,7 @@ function ChessboardToNNInput(chessboard) {
             } else {
                 halfMovesArr.push(lastPartOfFEN.indexOf(i))
             }
-        } else if (!repeatsDone) {
+        } else {
             if (lastPartOfFEN.indexOf(i) == " ") {
                 break;
             } else {
