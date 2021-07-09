@@ -54,7 +54,6 @@ class NeuralNetworkTrainer {
             white = Math.floor(Math.random() * 2);
             modelId = i;
             opponentModelId = this.models.length - i - 1;
-
             if (white == 1) {
                 loser = await this.playMatch(this.models[modelId], this.models[opponentModelId], this.chess)
                 this.updateScores(modelId, opponentModelId, loser, white)
@@ -153,7 +152,6 @@ class NeuralNetworkTrainer {
     }
 
     async playMatch(model0, model1, _chess) {
-
         this.chess = _chess
         this.chess.reset();
         board = Chessboard('board', this.chess.fen());
@@ -174,9 +172,9 @@ class NeuralNetworkTrainer {
             let monteChess = new Chess();
             monteChess.load(this.chess.fen())
             if (modelToMove == 0) {
-                move = await monteCarlo.getBestMove(model0.model, monteChess).then(r => r);
+                move = await monteCarlo.getBestMove(model0, monteChess).then(r => r);
             } else {
-                move = await monteCarlo.getBestMove(model1.model, monteChess).then(r => r);
+                move = await monteCarlo.getBestMove(model1, monteChess).then(r => r);
             }
             (async() => {
                 this.chess.move(move);
