@@ -1,10 +1,9 @@
 class NeuralNetworkTrainer {
-    constructor(chess, depth) {
+    constructor(chess) {
         this.models = [];
         this.keepTraining = true;
         this.rate = 0.01;
         this.modelScores = [];
-        this.depth = depth;
         this.chess = chess;
 
         if (localStorage.getItem("matchesPlayed") == null) {
@@ -30,8 +29,6 @@ class NeuralNetworkTrainer {
     }
 
     async startTraining() {
-
-        this.keepTraining = true;
         let modelId = 0;
         let opponentModelId = 1;
         let loser = 0;
@@ -54,7 +51,7 @@ class NeuralNetworkTrainer {
             if (!this.keepTraining) {
                 break;
             }
-            console.log(`Match number ${i} concluded.`);
+            console.log(`Match number ${i + 1} concluded.`);
 
             let matchesPlayed = parseInt(localStorage.getItem("matchesPlayed"));
             matchesPlayed++;
@@ -64,12 +61,11 @@ class NeuralNetworkTrainer {
         console.log("All matches concluded");
         console.log("memory: " + tf.memory().numTensors)
 
-        await this.evolution();
-        await this.saveModels();
-
         this.resetModelScores();
 
         if (this.keepTraining) {
+            await this.evolution();
+            await this.saveModels();
             await this.startTraining();
         }
     }
@@ -112,22 +108,26 @@ class NeuralNetworkTrainer {
         this.modelScores.sort(function(a, b) { return nnTrainer.getModelScore(b) - nnTrainer.getModelScore(a) });
 
         for (let i = 0; i < parseInt(this.models.length / 2); i++) {
-            topHalf.push(i);
-            losers.push(models.length - i);
+            topHalf.push(this.models[i]);
+            losers.push(this.models[this.models.length - i - 1]);
         }
 
         for (let i = 0; i < topHalf.length; i++) {
-            await cloneAndMutate(this.models[topHalf[i].modelId], this.models[losers[i].modelId]);
+            await this.cloneAndMutate(topHalf[i], losers[i]);
         }
 
+        for (let i = 0; i < this.models.length; i++) {
+            this.models[i].model.getWeights()[0].print();
+        }
 
         this.updateFinishedTrainingLogs();
     }
 
     async cloneAndMutate(originalElite, toBecomeMutated) {
-        let eliteWeights = await originalElite.getWeights();
-        await toBecomeMutated.setWeights(eliteWeights);
-        await toBecomeMutated.mutate();
+        let eliteWeights = originalElite.model.getWeights();
+        toBecomeMutated.model.setWeights(eliteWeights);
+        toBecomeMutated.mutate(this.rate);
+
     }
 
     updateFinishedTrainingLogs() {
@@ -150,7 +150,7 @@ class NeuralNetworkTrainer {
         board = Chessboard('board', this.chess.fen());
 
         let modelToMakeAMove = 0;
-        return await this.makeAMove(model0, model1, modelToMakeAMove)
+        return await this.makeAMove(model0.model, model1.model, modelToMakeAMove)
     }
 
     async makeAMove(model0, model1, modelToMove) {
@@ -162,11 +162,12 @@ class NeuralNetworkTrainer {
             }
         } else {
             let move = "";
-
+            let monteChess = new Chess();
+            monteChess.load(this.chess.fen())
             if (modelToMove == 0) {
-                move = await monteCarloTreeSearch(this.depth, model0.model, this.chess);
+                move = await monteCarlo.getBestMove(model0.model, monteChess);
             } else {
-                move = await monteCarloTreeSearch(this.depth, model1.model, this.chess);
+                move = await monteCarlo.getBestMove(model1.model, monteChess);
             }
             (async() => {
                 this.chess.move(move);
@@ -202,9 +203,6 @@ class NeuralNetworkTrainer {
 
         let results = await this.playTestMatch(model1, model2, this.chess);
         await this.testResults(results, model1, model2, id1, id2);
-
-
-
     }
 
     async testResults(r, model1, model2, id1, id2) {
@@ -239,28 +237,9 @@ class NeuralNetworkTrainer {
         }
     }
 
-    async testIfEvolutionWorks() {
-        for (let i = 0; i < this.models.length; i++) {
-            NNTrainer.models[i].model.getWeights()[0].print()
-        }
-        console.log("---------------------");
-        console.log("---------------------");
-        console.log("---------------------");
-        console.log("---------------------");
-        console.log("---------------------");
-        console.log("---------------------");
-        for (let i = 0; i < this.models.length; i++) {
-            this.updateScores(i);
-        }
-        await this.evolution();
-        for (let i = 0; i < this.models.length; i++) {
-            NNTrainer.models[i].model.getWeights()[0].print()
-        }
-    }
-
     async monteCarloSpeedTester() {
         let startTime = new Date().getTime();
-        this.chess.move(await monteCarloTreeSearch(1, this.models[5].model, this.chess));
+        this.chess.move(monteCarlo.getBestMove(this.models[5].model, this.chess));
         let timeDifference = new Date().getTime() - startTime;
         board = Chessboard('board', this.chess.fen());
         console.log(timeDifference);

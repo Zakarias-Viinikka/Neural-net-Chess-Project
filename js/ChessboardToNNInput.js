@@ -114,7 +114,6 @@ function ChessboardToNNInput(chessboard) {
     } else {
         chessboardAsArray.push(0);
     }
-
     //enpassant
     return chessboardAsArray;
 }

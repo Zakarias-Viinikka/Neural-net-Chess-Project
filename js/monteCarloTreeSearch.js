@@ -1,170 +1,175 @@
-let monteModel;
-let leafMoves = []; //array for storing the leaf moves in the monte carlo tree search algorithm
-let bestMoveIndex = 0; //stores the index for the best root move so far
-let bestMoveValue = -1; //stores the value for the best prediction so far
-let possibleMovesMonte; //possibleMoves but as a global variable for the monte carlo tree search
-let boardBeforeMonte;
-let bestMove;
+class monteCarloTreeSearch {
+    constructor(chess, depth) {
+        this.chess = chess;
+        this.originalPosition = chess.fen();
+        this.depth = depth;
+        this.model = "model";
+        this.treeBranchRoots = [];
+    }
 
-async function monteCarloTreeSearch(depth, _model, _chess) {
-    monteModel = _model;
-    boardBeforeMonte = _chess.fen(); //saves the board before anything is done
-    monteBoard = _chess;
-    possibleMovesMonte = monteBoard.moves();
-    let originalBoard = monteBoard.fen();
-    let rootMoves = [];
-    let evaluationPool = 0; // all the evaluations will be added into this variable and later the number will be used to distribute how many moves each move is worth investigating further
+    async getBestMove(model, chess) {
+        this.chess = chess;
+        this.originalPosition = chess.fen();
+        this.model = model;
 
-    for (var i = 0; i < possibleMovesMonte.length; i++) {
+        await this.createTreeBranchRoots();
+        this.treeBranchRoots.sort(function(a, b) { return a.evaluation - b.evaluation });
+        await this.treeSearch();
+        let bestRoot = await this.getBestRoot();
+        await this.resetStuff();
+        this.chess.reset();
+        return bestRoot.move;
+    }
+
+    async resetStuff() {
+        this.treeBranchRoots = [];
+        this.chess.load(this.originalPosition);
+    }
+
+    async createTreeBranchRoots() {
+        let chess = this.chess;
+        let allPossibleMoves = chess.moves();
+        for (let i = 0; i < allPossibleMoves.length; i++) {
+            let move = allPossibleMoves[i];
+            chess.load(this.originalPosition);
+            chess.move(move);
+            let moveEvaluation = await this.evaluateMove(chess.fen());
+            let newBoardPosition = this.chess.fen();
+            this.treeBranchRoots.push(new treeBranchRoot(move, moveEvaluation, this, newBoardPosition));
+            this.chess.load(this.originalPosition);
+        }
+    }
+
+    async treeSearch() {
+        for (let i = 0; i < this.depth; i++) {
+            console.log(i);
+            let bestRoot = this.treeBranchRoots[this.treeBranchRoots.length - 1];
+            await bestRoot.analyzeBestMove();
+            //sort
+            for (let i = this.treeBranchRoots.length - 1; i > 0; i--) {
+                let newEvaluation = this.treeBranchRoots[i].evaluation;
+                if (newEvaluation < this.treeBranchRoots[i - 1].evaluation) {
+                    let tmp = this.treeBranchRoots[i - 1].evaluation;
+                    this.treeBranchRoots[i - 1].evaluation = newEvaluation;
+                    this.treeBranchRoots[i].evaluation = tmp;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    async getBestRoot() {
+        return this.treeBranchRoots[this.treeBranchRoots.length - 1];
+    }
+
+    async getRootEvaluation(rootIndex) {
+        return this.treeBranchRoots[rootIndex].evaluation;
+    }
+
+    async evaluateMove(board) {
+        let moveEvaluation;
         tf.tidy(() => {
-            monteBoard.move(possibleMovesMonte[i]);
 
-            let move = tf.tensor2d([ChessboardToNNInput(monteBoard)]);
-            //rootMoves.push(positionEvaluation())
-            let predictionResult = monteModel.predict(move).dataSync()[0];
-            //console.log(possibleMovesMonte[i]);
-            //move.print()
-            if (predictionResult > 0) {
-                evaluationPool += predictionResult;
-            }
-            rootMoves.push(new rootEvaluation(i, predictionResult))
-
-            monteBoard.load(originalBoard);
+            let tfChessBoard = tf.tensor2d([ChessboardToNNInput(this.chess)]);
+            let predictionResult = this.model.predict(tfChessBoard).dataSync()[0];
+            moveEvaluation = predictionResult;
         })
-    }
-    //hand out moves
-    let sortMovesByValueArr = [];
-    let totalMovesHandedOut = 0;
-    for (var i = 0; i < rootMoves.length; i++) {
-        rootMoves[i].updateMovesToCheck(evaluationPool, depth);
-        totalMovesHandedOut += rootMoves[i].getPositionsToCheckLeft();
-        sortMovesByValueArr.push(i + "," + rootMoves[i].getEvaluation());
-    }
-    //sort moves by value
-    sortMovesByValueArr.sort(compareWithSplit);
-    //remove the extra moves handed out
-    let removeMoveIndex = sortMovesByValueArr.length;
-    while (totalMovesHandedOut > depth) {
-        rootMoves[sortMovesByValueArr[removeMoveIndex - 1].split(",")[0]].removeAMove();
-        removeMoveIndex--;
-        if (removeMoveIndex - 1 < 0) {
-            removeMoveIndex = sortMovesByValueArr.length;
-        }
-        totalMovesHandedOut--;
-    }
-    //create the first set of leafmoves
-    for (var i = 0; i < rootMoves.length; i++) {
-        monteBoard.load(originalBoard);
-        monteBoard.move(possibleMovesMonte[i]);
-        //i is the root of the leaf
-        leafMoves.push(new leafEvaluation(i, monteBoard.fen(), rootMoves[i].getPositionsToCheckLeft()));
-    }
-    await goThroughLeafMoves();
-    monteBoard.load(originalBoard);
-    bestMoveFound();
-    return bestMove;
-}
-
-async function goThroughLeafMoves() {
-    for (let i = 0; i < leafMoves.length; i++) {
-        leafMoves[i].getPredictions();
+        return moveEvaluation
     }
 }
 
-function compareWithSplit(a, b) {
-    a = a.split(",")[1];
-    b = b.split(",")[1];
-    return b - a;
-}
+class treeBranchRoot {
+    constructor(move, evaluation, monteCarlo, boardPosition) {
+        this.boardPosition = boardPosition;
+        this.monteCarlo = monteCarlo;
+        this.move = move;
+        this.originalEvaluation = evaluation;
+        this.evaluation = evaluation;
+        this.treeBranches = [];
+    }
 
-function bestMoveFound() {
-    leafMoves = [];
-    bestMoveIndex = 0;
-    bestMoveValue = -1;
-    bestMove = possibleMovesMonte[bestMoveIndex];
-    console.log(`Best move has been found. memory: ${tf.memory().numTensors}`);
-}
-
-//create an object for every root move
-function rootEvaluation(oSent, eSent) {
-    let origin = oSent;
-    let evaluation = eSent;
-    let positionsToCheckLeft = 0;
-    this.updateMovesToCheck = function(evaluationPool, positionsToCheck) {
-        if (evaluation > 0) {
-            positionsToCheckLeft = Math.round((evaluation / evaluationPool * positionsToCheck));
-        }
-        if (positionsToCheckLeft <= 0) {
-            positionsToCheckLeft = 1;
+    async analyzeBestMove() {
+        if (this.treeBranches.length == 0) {
+            await this.createLeafPositions();
+            this.treeBranches.sort(function(a, b) { return a.evaluation - b.evaluation });
+        } else {
+            await this.analyzeBestLeaf();
         }
     }
-    this.removeAMove = function() {
-        positionsToCheckLeft--;
+
+    async createLeafPositions() {
+        let possibleMoves = this.monteCarlo.chess.moves();
+        let chess = this.monteCarlo.chess;
+        for (let i = 0; i < possibleMoves.length; i++) {
+            chess.load(this.boardPosition);
+            chess.move(possibleMoves[i]);
+            let evaluation = await this.monteCarlo.evaluateMove(chess.fen());
+            let newBoardPosition = this.monteCarlo.chess.fen();
+            this.treeBranches.push(new treeBranch(this, this.monteCarlo, evaluation, newBoardPosition));
+            this.monteCarlo.chess.load(this.boardPosition);
+        }
     }
-    this.getPositionsToCheckLeft = function() {
-        return positionsToCheckLeft;
+
+    async analyzeBestLeaf() {
+        await this.treeBranches[this.treeBranches.length - 1].analyze();
     }
-    this.getOrigin = function() {
-        return origin;
-    }
-    this.getEvaluation = function() {
-        return evaluation;
+
+    async updateEvaluations(evaluation) {
+        this.evaluation = evaluation;
+
+        this.monteCarlo.treeBranchRoots.sort(function(a, b) { return a.evaluation - b.evaluation });
     }
 }
-//object for leaf moves
-function leafEvaluation(oSent, newBoard, positionsToCheckLeftSent) {
-    let leafIndex = leafMoves.length;
-    let origin = oSent;
-    let allPossibleMovesFromHere = [];
-    let allEvaluations = [];
-    let leafBoard = new Chess();
-    leafBoard.load(newBoard);
-    let positionsToCheckLeft = positionsToCheckLeftSent;
-    let evaluationSum = 0;
-    //updates the best move if one is found or creates a new leaf
-    this.getPredictions = async function() {
-        console.log(allEvaluations);
-        console.log(evaluationSum);
-        console.log(positionsToCheckLeft);
-        // ... // get all the moves
-        leafBoard.load(newBoard);
-        allPossibleMovesFromHere = leafBoard.moves();
-        // ... //
 
-        // ... // get a prediction for all the moves
-        for (let i = 0; i < allPossibleMovesFromHere.length; i++) {
-            tf.tidy(() => {
-                leafBoard.load(newBoard);
-                leafBoard.move(allPossibleMovesFromHere[i]);
-                let tfChessBoard = tf.tensor2d([ChessboardToNNInput(leafBoard)]);
-                //get the reults from the promise by using parsefloat on the promise after using dataSync to make sure the order is right
-                let results = monteModel.predict(tfChessBoard).dataSync()[0];
-                if (results < 0) {
-                    results = 0;
-                }
+class treeBranch {
+    constructor(origin, monteCarlo, evaluation, boardPosition) {
+        this.evaluation = evaluation;
+        this.boardPosition = boardPosition;
+        this.monteCarlo = monteCarlo;
+        this.origin = origin;
+        this.treeBranches = [];
+    }
 
-                allEvaluations.push(results);
-                evaluationSum += results;
-            })
+    async analyze() {
+        if (this.treeBranches.length == 0) {
+            await this.createLeafPositions();
+            this.treeBranches.sort(function(a, b) { return a.evaluation - b.evaluation });
+            await this.updateEvaluations(this.evaluation);
+        } else {
+            await this.treeBranches[this.treeBranches.length - 1].analyze();
         }
+    }
 
-        // ... //
+    async createLeafPositions() {
+        let chess = this.monteCarlo.chess;
+        let possibleMoves = chess.moves();
+        for (let i = 0; i < possibleMoves.length; i++) {
+            chess.load(this.boardPosition);
+            chess.move(possibleMoves[i]);
+            let evaluation = await this.monteCarlo.evaluateMove(chess.fen());
+            let newBoardPosition = this.monteCarlo.chess.fen();
+            this.treeBranches.push(new treeBranch(this, this.monteCarlo, evaluation, newBoardPosition));
 
-        // ... // returnMoveOrCreateNewLeaf();
-        if (positionsToCheckLeft < 1) {
-            for (var i = 0; i < allEvaluations.length; i++) {
-                if (allEvaluations[i] > bestMoveValue) {
-                    bestMoveIndex = origin;
-                    bestMoveValue = allEvaluations[i];
-                }
-            }
-        } else { //create new leaf
-            for (var i = 0; i < allPossibleMovesFromHere.length; i++) {
-                leafBoard.load(newBoard);
-                leafBoard.move(allPossibleMovesFromHere[i]);
-                let movesForleafLeft = parseInt(allEvaluations[i] / evaluationSum * positionsToCheckLeft);
-                leafMoves.push(new leafEvaluation(origin, leafBoard.fen(), movesForleafLeft));
+            chess.load(this.boardPosition);
+        }
+    }
+
+    async updateEvaluations(evaluation) {
+        this.evaluation = evaluation;
+
+        for (let i = this.treeBranches.length - 1; i > 0; i--) {
+            let newEvaluation = this.treeBranches[i].evaluation;
+            if (newEvaluation < this.treeBranches[i - 1].evaluation) {
+                let tmp = this.treeBranches[i - 1].evaluation;
+                this.treeBranches[i - 1].evaluation = newEvaluation;
+                this.treeBranches[i].evaluation = tmp;
+            } else {
+                break;
             }
         }
+        this.treeBranches.sort(function(a, b) { return a.evaluation - b.evaluation });
+
+        await this.origin.updateEvaluations(evaluation);
     }
 }
