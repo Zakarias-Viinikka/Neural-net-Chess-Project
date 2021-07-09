@@ -11,8 +11,9 @@ class NeuralNet {
     }
 
     //weights change to a random weight between -1 and 1
-    extremeMutate(rate) {
+    async extremeMutate(rate) {
         tf.tidy(() => {
+
             const weights = this.model.getWeights();
             const mutatedWeights = [];
             for (let i = 0; i < weights.length; i++) {
@@ -28,29 +29,30 @@ class NeuralNet {
                 let newTensor = tf.tensor(values, shape);
                 mutatedWeights[i] = newTensor;
             }
-            this.model.setWeights(mutatedWeights);
-        });
+        })
     }
 
-    mutate(rate) {
-        tf.tidy(() => {
-            const weights = this.model.getWeights();
-            const mutatedWeights = [];
-            for (let i = 0; i < weights.length; i++) {
-                let tensor = weights[i];
-                let shape = weights[i].shape;
-                let values = tensor.dataSync().slice();
-                for (let j = 0; j < values.length; j++) {
-                    if (Math.random() < rate) {
-                        let w = values[j];
-                        values[j] = this._zig.slowTraining(w);
-                    }
+    async mutate(rate) {
+        const weights = this.model.getWeights();
+        const mutatedWeights = [];
+        for (let i = 0; i < weights.length; i++) {
+            let tensor = weights[i];
+            let shape = weights[i].shape;
+            let values = tensor.dataSync().slice();
+            for (let j = 0; j < values.length; j++) {
+                if (Math.random() < rate) {
+                    let w = values[j];
+                    values[j] = this._zig.slowTraining(w);
                 }
-                let newTensor = tf.tensor(values, shape);
-                mutatedWeights[i] = newTensor;
             }
-            this.model.setWeights(mutatedWeights);
-        });
+            let newTensor = tf.tensor(values, shape);
+            mutatedWeights[i] = newTensor;
+        }
+        this.model.setWeights(mutatedWeights);
+
+        this.model.setWeights(mutatedWeights);
+        tf.dispose(mutatedWeights);
+        console.log(tf.memory().numTensors)
     }
 
     createModel() {
@@ -61,7 +63,7 @@ class NeuralNet {
         const hiddenLayer5 = tf.layers.dense({ units: 60, activation: 'relu' });
         const hiddenLayer6 = tf.layers.dense({ units: 50, activation: 'relu' });
         const hiddenLayer7 = tf.layers.dense({ units: 25, activation: 'relu' });
-        const outputLayer = tf.layers.dense({ units: 1, activation: 'softmax' });
+        const outputLayer = tf.layers.dense({ units: 1, activation: 'sigmoid' });
 
         const model = tf.sequential();
         model.add(inputLayer);

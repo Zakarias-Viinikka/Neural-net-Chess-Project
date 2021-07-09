@@ -45,7 +45,7 @@
         <div class="row">
             <button class="btn btn-secondary" id="startTheTraining">Start Training</button>
             <button class="btn btn-secondary" id="CreateNewModels">Create new Models</button>
-            <button class="btn btn-secondary" id="loadModel">Load Model</button>
+            <button class="btn btn-secondary" id="loadModel">Load Models (Have to create models first and it will load on them)</button>
 
             <button class="btn btn-secondary" id="playBestMove">Play best Move</button>
             <button class="btn btn-secondary" id="predictBestMove">Predict best move</button>
@@ -83,26 +83,28 @@
             NNTrainer.monteCarloSpeedTester();
         });
 
-        let NNTrainer;
+        let NNTrainer = new NeuralNetworkTrainer(new Chess());
+
         let monteCarlo = new monteCarloTreeSearch(new Chess(), depth);
 
         var game = new Chess();
         let board = Chessboard('board', 'start');
 
         document.getElementById("CreateNewModels").addEventListener("click", async() => {
-            NNTrainer = new NeuralNetworkTrainer(new Chess(), depth);
-            let models = await CreateNewModels();
+            let models = await CreateNewModels().then(r => r);
             for (let i = 0; i < models.length; i++) {
-                NNTrainer.addModelToTrainer(models[i]);
+                await NNTrainer.addModelToTrainer(models[i]).then(r => null);
             }
-            await mutateModels().then(console.log("Created Models"));
+            await mutateModels().then(response => NNTrainer.models[0].model.getWeights()[0].print());
             //NNTrainer.models[0].model.getWeights()[0].print();
 
         });
 
         async function mutateModels() {
-            for (let index = 0; index < NNTrainer.models.length; index++) {
-                NNTrainer.models[0].mutate(0.5);
+            for (let j = 0; j < 10; j++) {
+                for (let index = 0; index < NNTrainer.models.length; index++) {
+                    NNTrainer.models[0].extremeMutate(0.5);
+                }
             }
         }
 
@@ -156,6 +158,21 @@
         slider.oninput = function() {
             depthSpan.innerHTML = this.value;
             monteCarlo.depth = this.value;
+        }
+
+        document.getElementById("loadModel").addEventListener("click", async() => {
+            await loadTheModels().then(r => console.log("loaded models"));
+            await showProofOfLoadedModels().then(r => r)
+        })
+
+        async function loadTheModels() {
+            for (let i = 0; i < 10; i++) {
+                NNTrainer.models[i].model = await tf.loadLayersModel('indexeddb://model' + i)
+            }
+        }
+
+        async function showProofOfLoadedModels() {
+            NNTrainer.models[0].model.getWeights()[0].print();
         }
     </script>
 </body>

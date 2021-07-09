@@ -12,11 +12,11 @@ class monteCarloTreeSearch {
         this.originalPosition = chess.fen();
         this.model = model;
 
-        await this.createTreeBranchRoots();
+        await this.createTreeBranchRoots().then(r => r);
         this.treeBranchRoots.sort(function(a, b) { return a.evaluation - b.evaluation });
-        await this.treeSearch();
-        let bestRoot = await this.getBestRoot();
-        await this.resetStuff();
+        await this.treeSearch().then(r => r);
+        let bestRoot = await this.getBestRoot().then(r => r);
+        await this.resetStuff().then(r => r);
         this.chess.reset();
         return bestRoot.move;
     }
@@ -33,7 +33,7 @@ class monteCarloTreeSearch {
             let move = allPossibleMoves[i];
             chess.load(this.originalPosition);
             chess.move(move);
-            let moveEvaluation = await this.evaluateMove(chess.fen());
+            let moveEvaluation = await this.evaluateMove(chess.fen()).then(r => r);
             let newBoardPosition = this.chess.fen();
             this.treeBranchRoots.push(new treeBranchRoot(move, moveEvaluation, this, newBoardPosition));
             this.chess.load(this.originalPosition);
@@ -42,9 +42,8 @@ class monteCarloTreeSearch {
 
     async treeSearch() {
         for (let i = 0; i < this.depth; i++) {
-            console.log(i);
             let bestRoot = this.treeBranchRoots[this.treeBranchRoots.length - 1];
-            await bestRoot.analyzeBestMove();
+            await bestRoot.analyzeBestMove().then(r => r);
             //sort
             for (let i = this.treeBranchRoots.length - 1; i > 0; i--) {
                 let newEvaluation = this.treeBranchRoots[i].evaluation;
@@ -69,9 +68,10 @@ class monteCarloTreeSearch {
 
     async evaluateMove(board) {
         let moveEvaluation;
+        let chessboardAsArray = await ChessboardToNNInput(this.chess).then(r => r);
         tf.tidy(() => {
 
-            let tfChessBoard = tf.tensor2d([ChessboardToNNInput(this.chess)]);
+            let tfChessBoard = tf.tensor2d([chessboardAsArray]);
             let predictionResult = this.model.predict(tfChessBoard).dataSync()[0];
             moveEvaluation = predictionResult;
         })
@@ -91,10 +91,10 @@ class treeBranchRoot {
 
     async analyzeBestMove() {
         if (this.treeBranches.length == 0) {
-            await this.createLeafPositions();
+            await this.createLeafPositions().then(r => r);
             this.treeBranches.sort(function(a, b) { return a.evaluation - b.evaluation });
         } else {
-            await this.analyzeBestLeaf();
+            await this.analyzeBestLeaf().then(r => r);
         }
     }
 
@@ -104,7 +104,7 @@ class treeBranchRoot {
         for (let i = 0; i < possibleMoves.length; i++) {
             chess.load(this.boardPosition);
             chess.move(possibleMoves[i]);
-            let evaluation = await this.monteCarlo.evaluateMove(chess.fen());
+            let evaluation = await this.monteCarlo.evaluateMove(chess.fen()).then(r => r);
             let newBoardPosition = this.monteCarlo.chess.fen();
             this.treeBranches.push(new treeBranch(this, this.monteCarlo, evaluation, newBoardPosition));
             this.monteCarlo.chess.load(this.boardPosition);
@@ -112,7 +112,7 @@ class treeBranchRoot {
     }
 
     async analyzeBestLeaf() {
-        await this.treeBranches[this.treeBranches.length - 1].analyze();
+        await this.treeBranches[this.treeBranches.length - 1].analyze().then(r => r);
     }
 
     async updateEvaluations(evaluation) {
@@ -133,11 +133,11 @@ class treeBranch {
 
     async analyze() {
         if (this.treeBranches.length == 0) {
-            await this.createLeafPositions();
+            await this.createLeafPositions().then(r => r);
             this.treeBranches.sort(function(a, b) { return a.evaluation - b.evaluation });
-            await this.updateEvaluations(this.evaluation);
+            await this.updateEvaluations(this.evaluation).then(r => r);
         } else {
-            await this.treeBranches[this.treeBranches.length - 1].analyze();
+            await this.treeBranches[this.treeBranches.length - 1].analyze().then(r => r);
         }
     }
 
@@ -147,7 +147,7 @@ class treeBranch {
         for (let i = 0; i < possibleMoves.length; i++) {
             chess.load(this.boardPosition);
             chess.move(possibleMoves[i]);
-            let evaluation = await this.monteCarlo.evaluateMove(chess.fen());
+            let evaluation = await this.monteCarlo.evaluateMove(chess.fen()).then(r => r);
             let newBoardPosition = this.monteCarlo.chess.fen();
             this.treeBranches.push(new treeBranch(this, this.monteCarlo, evaluation, newBoardPosition));
 
@@ -170,6 +170,6 @@ class treeBranch {
         }
         this.treeBranches.sort(function(a, b) { return a.evaluation - b.evaluation });
 
-        await this.origin.updateEvaluations(evaluation);
+        await this.origin.updateEvaluations(evaluation).then(r => r);
     }
 }

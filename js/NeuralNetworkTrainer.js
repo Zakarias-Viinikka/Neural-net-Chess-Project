@@ -19,7 +19,7 @@ class NeuralNetworkTrainer {
         }
     }
 
-    addModelToTrainer(model) {
+    async addModelToTrainer(model) {
         this.models.push(model);
         this.modelScores.push(new ModelScore(this.models.length));
     }
@@ -29,12 +29,27 @@ class NeuralNetworkTrainer {
     }
 
     async startTraining() {
+        console.log("Started Training");
+
+        await this.tournament().then(r => r);
+
+        console.log("All matches concluded");
+        console.log("memory: " + tf.memory().numTensors)
+
+        await this.saveModels().then(r => r);
+        this.resetModelScores();
+        await this.evolution().then(r => r);
+
+        if (this.keepTraining) {
+            await this.startTraining().then(r => r);
+        }
+    }
+
+    async tournament() {
         let modelId = 0;
         let opponentModelId = 1;
         let loser = 0;
         let white = 0;
-        console.log("Started Training");
-
         for (let i = 0; i < parseInt(this.models.length / 2); i++) {
             white = Math.floor(Math.random() * 2);
             modelId = i;
@@ -57,24 +72,14 @@ class NeuralNetworkTrainer {
             matchesPlayed++;
             localStorage.setItem("matchesPlayed", matchesPlayed);
         }
-
-        console.log("All matches concluded");
-        console.log("memory: " + tf.memory().numTensors)
-
-        this.resetModelScores();
-
-        if (this.keepTraining) {
-            await this.evolution();
-            await this.saveModels();
-            await this.startTraining();
-        }
     }
 
     async saveModels() {
         if (this.keepTraining) {
-            for (let i = 0; i < 10 /*this.models.length*/ ; i++) {
-                let savePath = 'localstorage://Model' + i
-                const saveResult = await this.models[i].model.save(savePath, { requestInit: { method: 'POST', headers: { 'class': 'Dog' } } })
+            for (let i = 0; i < this.models.length; i++) {
+                let savePath = 'model' + i
+                const saveResult = await this.models[i].model.save('indexeddb://' + savePath).then(r => r);
+
             }
             console.log("saved models")
         }
@@ -113,21 +118,25 @@ class NeuralNetworkTrainer {
         }
 
         for (let i = 0; i < topHalf.length; i++) {
-            await this.cloneAndMutate(topHalf[i], losers[i]);
+            await this.cloneAndMutate(topHalf[i], losers[i]).then(r => r);
         }
 
-        for (let i = 0; i < this.models.length; i++) {
-            this.models[i].model.getWeights()[0].print();
-        }
+        this.models[9].model.getWeights()[0].print();
 
         this.updateFinishedTrainingLogs();
     }
 
     async cloneAndMutate(originalElite, toBecomeMutated) {
         let eliteWeights = originalElite.model.getWeights();
-        toBecomeMutated.model.setWeights(eliteWeights);
-        toBecomeMutated.mutate(this.rate);
+        await this.setWeight(toBecomeMutated, eliteWeights).then(r => r);
+        await toBecomeMutated.mutate(this.rate).then(r => r);
 
+    }
+
+    async setWeight(whoToSet, weights) {
+        tf.tidy(() => {
+            whoToSet.model.setWeights(weights);
+        })
     }
 
     updateFinishedTrainingLogs() {
@@ -150,7 +159,7 @@ class NeuralNetworkTrainer {
         board = Chessboard('board', this.chess.fen());
 
         let modelToMakeAMove = 0;
-        return await this.makeAMove(model0.model, model1.model, modelToMakeAMove)
+        return await this.makeAMove(model0.model, model1.model, modelToMakeAMove).then(r => r)
     }
 
     async makeAMove(model0, model1, modelToMove) {
@@ -165,9 +174,9 @@ class NeuralNetworkTrainer {
             let monteChess = new Chess();
             monteChess.load(this.chess.fen())
             if (modelToMove == 0) {
-                move = await monteCarlo.getBestMove(model0.model, monteChess);
+                move = await monteCarlo.getBestMove(model0.model, monteChess).then(r => r);
             } else {
-                move = await monteCarlo.getBestMove(model1.model, monteChess);
+                move = await monteCarlo.getBestMove(model1.model, monteChess).then(r => r);
             }
             (async() => {
                 this.chess.move(move);
@@ -178,7 +187,7 @@ class NeuralNetworkTrainer {
             modelToMove++;
             modelToMove = modelToMove % 2;
 
-            await this.timeout(100);
+            await this.timeout(100).then(r => r);
 
             if (this.keepTraining) {
                 return this.makeAMove(model0, model1, modelToMove)
@@ -201,8 +210,8 @@ class NeuralNetworkTrainer {
 
         this.chess.load("QQQBkNKB/PPPNN1QB/PPPPRBPP/PPPRRRPP/PPPPPPPP/PPPPPPPP/PPPPPPPP/RNBQRBNR w - - 0 1");
 
-        let results = await this.playTestMatch(model1, model2, this.chess);
-        await this.testResults(results, model1, model2, id1, id2);
+        let results = await this.playTestMatch(model1, model2, this.chess).then(r => r);
+        await this.testResults(results, model1, model2, id1, id2).then(r => r);
     }
 
     async testResults(r, model1, model2, id1, id2) {
@@ -217,7 +226,7 @@ class NeuralNetworkTrainer {
 
     async playTestMatch(model0, model1, _chess) {
         let modelToMakeAMove = 0;
-        return await this.makeAMove(model0, model1, modelToMakeAMove)
+        return await this.makeAMove(model0, model1, modelToMakeAMove).then(r => r)
     }
 
     getModelScore(modelId) {

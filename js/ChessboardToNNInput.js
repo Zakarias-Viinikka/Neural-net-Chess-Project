@@ -1,4 +1,4 @@
-function ChessboardToNNInput(chessboard) {
+async function ChessboardToNNInput(chessboard) {
     let boardAs2DArray = chessboard.board();
     let chessboardAsArray = [];
     this.getPieceValue = function(type, color) {
