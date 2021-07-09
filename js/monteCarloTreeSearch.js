@@ -18,7 +18,7 @@ async function monteCarloTreeSearch(depth, _model, _chess) {
     for (var i = 0; i < possibleMovesMonte.length; i++) {
         monteBoard.move(possibleMovesMonte[i]);
 
-        let move = tf.tensor2d([ChessboardToNNInput()]);
+        let move = tf.tensor2d([ChessboardToNNInput(monteBoard.fen())]);
         let promise = await monteModel.predict(move); // the promise stores the predict data once the model is done predicting
         //rootMoves.push(positionEvaluation())
         let results = parseFloat(promise.dataSync());
@@ -132,7 +132,7 @@ function leafEvaluation(oSent, currentBoardSent, positionsToCheckLeftSent) {
         for (let i = 0; i < allPossibleMovesFromHere.length; i++) {
             monteBoard.load(currentBoard);
             monteBoard.move(allPossibleMovesFromHere[i]);
-            let tfChessBoard = tf.tensor2d([ChessboardToNNInput()]);
+            let tfChessBoard = tf.tensor2d([ChessboardToNNInput(monteBoard.fen())]);
             const promise = await monteModel.predict(tfChessBoard);
             //get the reults from the promise by using parsefloat on the promise after using dataSync to make sure the order is right
             let results = parseFloat(promise.dataSync());

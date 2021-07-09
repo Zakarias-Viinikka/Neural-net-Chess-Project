@@ -58,6 +58,7 @@ class NeuralNet {
             }
             this.model.setWeights(mutatedWeights);
         });
+        console.log("mutated");
     }
 
     createModel() {

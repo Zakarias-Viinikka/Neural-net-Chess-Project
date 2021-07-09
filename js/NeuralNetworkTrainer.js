@@ -41,7 +41,7 @@ class NeuralNetworkTrainer {
         for (let i = 0; i < parseInt(this.models.length / 2); i++) {
             white = Math.floor(Math.random() * 2);
             modelId = i;
-            opponentModelId = this.models.length - i;
+            opponentModelId = this.models.length - i - 1;
 
             if (white == 1) {
                 loser = await this.playMatch(this.models[modelId], this.models[opponentModelId], this.chess)
@@ -256,6 +256,12 @@ class NeuralNetworkTrainer {
         for (let i = 0; i < this.models.length; i++) {
             NNTrainer.models[i].model.getWeights()[0].print()
         }
+    }
+
+    monteCarloSpeedTester() {
+        let startTime = new Date().getTime();
+        monteCarloTreeSearch(1, this.models[0].model, new Chess());
+        let timeDifference = new Date().getTime() - startTime;
     }
 }
 
