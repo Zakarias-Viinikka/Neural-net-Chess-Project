@@ -36,8 +36,17 @@
 <body id="body">
     <div id="container" class="container">
         <div class="row">
-            <div id="board" style="width: 400px"></div>
-            <div id="moveMade">X</div>
+            <div class="col">
+                <div id="board" style="width: 400px"></div>
+
+            </div>
+            <div class="col">
+                <div id="moveMade">X</div>
+            </div>
+            <div class="col">
+                <h5>Scores so far:</h5>
+                <div id="tournamentScores"></div>
+            </div>
         </div>
         <div class="row">
             Depth:
@@ -65,7 +74,7 @@
         </div>
         <div class="row">
             <input type="text" id="loadModelName" placeholder="Download name">
-            <button class="btn btn-secondary" id="loadFromDownloads">Load Model from Downloads</button>
+            <button class="btn btn-secondary" id="loadFromFiles">Load model from files</button>
         </div>
     </div>
 
@@ -95,7 +104,6 @@
         if (depth == null) {
             localStorage.setItem("treeSearchDepth", 0);
         }
-        let depth = document.getElementById("depthSlider").value;
         document.getElementById("testMonteSpeed").addEventListener("click", () => {
             NNTrainer.monteCarloSpeedTester();
         });
@@ -106,8 +114,8 @@
                 console.log("model doesn't exist. save failed.")
             }
         });
-        document.getElementById("loadFromDownloads").addEventListener("click", async() => {
-            await NNTrainer.loadFromDownloads(document.getElementById("loadModelName").value);
+        document.getElementById("loadFromFiles").addEventListener("click", async() => {
+            await NNTrainer.loadFromFiles(document.getElementById("loadModelName").value);
             console.log("loaded model from downloads and saved it.");
         });
 

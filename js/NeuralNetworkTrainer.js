@@ -62,6 +62,14 @@ class NeuralNetworkTrainer {
                 this.updateScores(modelId, opponentModelId, loser, white)
             }
 
+            //update visually scores so far
+            document.getElementById("tournamentScores").innerHTML = "";
+            for (let j = 0; j < this.modelScores.length; j++) {
+                let modelScore = this.modelScores[j];
+                document.getElementById("tournamentScores").innerHTML += modelScore.modelId + ": " + modelScore.score + "<br>";
+
+            }
+
             if (!this.keepTraining) {
                 break;
             }
@@ -88,17 +96,17 @@ class NeuralNetworkTrainer {
         const saveResult = await this.models[0].model.save('downloads://' + modelName);
     }
 
-    async loadFromDownloads(modelName) {
+    async loadFromFiles(modelName) {
         for (let i = 0; i < 10; i++) {
             let modelPath = 'http://localhost/models/' + modelName + ".json";
-            await this.models.push(new NeuralNet(modelPath))
+            await this.addModelToTrainer(new NeuralNet(modelPath))
         }
     }
 
     async loadTheModels() {
         for (let i = 0; i < 10; i++) {
             let modelPath = 'indexeddb://model' + i;
-            await this.models.push(new NeuralNet(modelPath))
+            await this.addModelToTrainer(new NeuralNet(modelPath));
         }
     }
 
@@ -115,6 +123,15 @@ class NeuralNetworkTrainer {
         } else {
             this.updateModelScore(model0Id, -1)
             this.updateModelScore(model1Id, 1)
+        }
+    }
+
+    updateModelScore(modelId, amount) {
+        for (let i = 0; i < this.models.length; i++) {
+            if (this.modelScores[i].modelId == modelId) {
+                this.modelScores[i].score += amount;
+                break;
+            }
         }
     }
 
@@ -284,13 +301,6 @@ class NeuralNetworkTrainer {
         return -1;
     }
 
-    updateModelScore(modelId, amount) {
-        for (let i = 0; i < this.models.length; i++) {
-            if (this.modelScores[i].modelId == modelId) {
-                this.modelScores[i].score += amount;
-            }
-        }
-    }
 
     async monteCarloSpeedTester() {
         let startTime = new Date().getTime();
