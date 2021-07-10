@@ -120,7 +120,7 @@ class NeuralNetworkTrainer {
             }
 
             for (let i = 0; i < topHalf.length; i++) {
-                await this.cloneAndMutate(topHalf[0], losers[i]).then(r => r);
+                await this.cloneAndMutate(topHalf[i], losers[i]).then(r => r);
             }
         } else if (this.trainingGoal = "eat") {
 
@@ -198,8 +198,20 @@ class NeuralNetworkTrainer {
                     this.modelScores[modelId].eatenPieces++;
                     this.modelScores[opponentModelId].eatenPieces--;
                 }
-                history.push(move);
                 this.chess.move(move);
+
+                let justBoardStateFen = "";
+                let ctr = 0;
+                while (true) {
+                    let fenCharacter = this.chess.fen().charAt(ctr);
+                    if (fenCharacter == " ") {
+                        break;
+                    }
+                    justBoardStateFen += fenCharacter;
+                    ctr++;
+                }
+
+                history.push(justBoardStateFen);
                 board = Chessboard('board', this.chess.fen());
                 document.getElementById("moveMade").innerHTML = move;
             })();

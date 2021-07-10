@@ -6,6 +6,7 @@ class monteCarloTreeSearch {
         this.model = "model";
         this.treeBranchRoots = [];
         this.history = [];
+        this.drawState = 0;
     }
 
     async getBestMove(model, chess, history) {
@@ -34,25 +35,24 @@ class monteCarloTreeSearch {
         let removedMoves = 0;
         for (let i = 0; i < allPossibleMoves.length; i++) {
             let move = allPossibleMoves[i];
-            if (await this.matchEndsInRepetition(move, allPossibleMoves.length, removedMoves)) {
-                removedMoves++;
-                break;
-            }
             chess.load(this.originalPosition);
             chess.move(move);
-            let moveEvaluation = await this.evaluateMove(chess, this.history, move, true);
+            let moveEvaluation = await this.evaluateMove(chess, this.history, move, false);
             let newBoardPosition = this.chess.fen();
-            this.treeBranchRoots.push(new treeBranchRoot(move, moveEvaluation, this, newBoardPosition));
+            if (await this.matchEndsInRepetition(allPossibleMoves.length, removedMoves) == false) {
+                this.treeBranchRoots.push(new treeBranchRoot(move, moveEvaluation, this, newBoardPosition));
+            }
             this.chess.load(this.originalPosition);
         }
     }
 
-    async matchEndsInRepetition(move, amountOfMoves, removedMoves) {
+    async matchEndsInRepetition(amountOfMoves, removedMoves) {
         if (amountOfMoves - removedMoves > 1) {
-            if (move[71] == 1) {
-
+            if (this.drawState == 1) {
+                return true;
             }
         }
+        return false;
     }
     async treeSearch() {
         for (let i = 0; i < this.depth; i++) {
@@ -83,6 +83,7 @@ class monteCarloTreeSearch {
     async evaluateMove(board, history, move, opponentTurn) {
         let moveEvaluation;
         let chessboardAsArray = await ChessboardToNNInput(board, history, move, opponentTurn);
+        this.drawState = chessboardAsArray[71];
         let tfChessBoard = await tf.tensor2d([chessboardAsArray]);
         tf.tidy(() => {
 

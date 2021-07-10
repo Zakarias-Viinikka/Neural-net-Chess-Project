@@ -1,4 +1,4 @@
-async function ChessboardToNNInput(chessboard, currentMove, history, opponentTurn) {
+async function ChessboardToNNInput(chessboard, history, currentMove, opponentTurn) {
     let boardAs2DArray = chessboard.board();
     let chessboardAsArray = [];
     this.getPieceValue = function(type, color) {
@@ -90,10 +90,10 @@ async function ChessboardToNNInput(chessboard, currentMove, history, opponentTur
         chessboardAsArray.push(0);
     }
 
-    if (opponentTurn == null) {
-        chessboardAsArray.push(0);
-    } else if (opponentTurn) {
+    if (opponentTurn != null && opponentTurn) {
         chessboardAsArray.push(1);
+    } else {
+        chessboardAsArray.push(0);
     }
 
     let halfMoves = "";
@@ -112,12 +112,21 @@ async function ChessboardToNNInput(chessboard, currentMove, history, opponentTur
     chessboardAsArray.push(halfMoves);
 
     let repetitions = 0;
+    let justBoardStateFen = "";
+    let ctr = 0;
+    while (true) {
+        let fenCharacter = chessboard.fen().charAt(ctr);
+        if (fenCharacter == " ") {
+            break;
+        }
+        justBoardStateFen += fenCharacter;
+        ctr++;
+    }
     for (let i = 0; i < history.length; i++) {
-        if (history[i] == currentMove) {
-            repetitions += 0.33;
+        if (history[i] == justBoardStateFen) {
+            repetitions += 0.5;
         }
     }
     chessboardAsArray.push(repetitions);
-    //enpassant
     return chessboardAsArray;
 }
