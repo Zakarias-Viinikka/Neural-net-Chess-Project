@@ -224,18 +224,23 @@ class NeuralNetworkTrainer {
         NNTrainer.models.push(NNTrainer.models[id].cloneModel());
     }
 
-    async playMatch(model0, modelId1, model1, modelId2, _chess) {
+    async playMatch(model0, modelId0, model1, modelId1, _chess) {
+        document.getElementById("modelThatIsWhite").innerHTML = modelId0
         this.chess = _chess
         this.chess.reset();
         board = Chessboard('board', this.chess.fen());
 
         let modelToMakeAMove = 0;
-        return await this.makeAMove(model0, modelId1, model1, modelId2, modelToMakeAMove, []).then(r => r)
+        return await this.makeAMove(model0, modelId0, model1, modelId1, modelToMakeAMove, []).then(r => r)
     }
 
     async makeAMove(model0, modelId0, model1, modelId1, modelToMove, history) {
+        let oneMoveAgo;
+        let twoMovesAgo;
         if (this.chess.game_over()) {
-            board2 = Chessboard('board2', this.chess.fen());
+            board2 = Chessboard('board4', this.chess.fen());
+            board2 = Chessboard('board3', oneMoveAgo);
+            board2 = Chessboard('board2', twoMovesAgo);
             if (game.in_checkmate) {
                 return modelToMove;
             } else {
@@ -263,6 +268,8 @@ class NeuralNetworkTrainer {
                 if (move.indexOf("p") != -1 || move.indexOf("P") != -1) {
                     history = [];
                 }
+                twoMovesAgo = oneMoveAgo;
+                oneMoveAgo = this.chess.fen();
                 this.chess.move(move);
 
                 let justBoardStateAsFenString = "";
