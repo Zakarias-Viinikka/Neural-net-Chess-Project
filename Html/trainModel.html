@@ -45,7 +45,7 @@
         <div class="row">
             <button class="btn btn-secondary" id="startTheTraining">Start Training</button>
             <button class="btn btn-secondary" id="CreateNewModels">Create new Models</button>
-            <button class="btn btn-secondary" id="loadModel">Load Models (Have to create models first and it will load on them)</button>
+            <button class="btn btn-secondary" id="loadModel">Load Models (Have to create models first and it will load onto them)</button>
 
             <button class="btn btn-secondary" id="playBestMove">Play best Move</button>
             <button class="btn btn-secondary" id="predictBestMove">Predict best move</button>
@@ -54,6 +54,8 @@
             <button class="btn btn-secondary" id="updateBoard">Update Board</button>
 
             <button class="btn btn-secondary" id="testMonteSpeed">Test Monte Speed</button>
+            <button class="btn btn-secondary" id="setGoalWin">Set Training Goal to Win</button>
+            <button class="btn btn-secondary" id="setGoalEat">Set Training Goal to Eat Pieces</button>
         </div>
     </div>
 
@@ -71,13 +73,22 @@
     <script src='../js/tf.min.js'></script>
     <!-- own scripts -->
     <script src="../js/ChessboardToNNInput.js"></script>
-    <script src="../js/arrayToFen.js"></script>
-    <script src="../js/pgnToArray.js"></script>
     <script src="../js/RandomNormalDistribution.js"></script>
     <script src="../js/NeuralNetwork.js"></script>
     <script src="../js/NeuralNetworkTrainer.js"></script>
     <script src="../js/monteCarloTreeSearch.js"></script>
     <script>
+        document.getElementById("setGoalWin").addEventListener("click", async() => {
+            await changeGoal("win");
+            console.log("training goal: " + NNTrainer.trainingGoal);
+        });
+        document.getElementById("setGoalEat").addEventListener("click", async() => {
+            await changeGoal("eat");
+            console.log("training goal: " + NNTrainer.trainingGoal);
+        });
+        async function changeGoal(goal) {
+            NNTrainer.trainingGoal = goal;
+        }
         let depth = document.getElementById("depthSlider").value;
         document.getElementById("testMonteSpeed").addEventListener("click", () => {
             NNTrainer.monteCarloSpeedTester();

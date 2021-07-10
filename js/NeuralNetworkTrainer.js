@@ -5,6 +5,7 @@ class NeuralNetworkTrainer {
         this.rate = 0.01;
         this.modelScores = [];
         this.chess = chess;
+        this.trainingGoal = "win";
 
         if (localStorage.getItem("matchesPlayed") == null) {
             localStorage.setItem("matchesPlayed", "0");
@@ -55,10 +56,10 @@ class NeuralNetworkTrainer {
             modelId = i;
             opponentModelId = this.models.length - i - 1;
             if (white == 1) {
-                loser = await this.playMatch(this.models[modelId], this.models[opponentModelId], this.chess)
+                loser = await this.playMatch(this.models[modelId], modelId, this.models[opponentModelId], opponentModelId, this.chess)
                 this.updateScores(modelId, opponentModelId, loser, white)
             } else {
-                loser = await this.playMatch(this.models[opponentModelId], this.models[modelId], this.chess)
+                loser = await this.playMatch(this.models[opponentModelId], modelId, this.models[modelId], opponentModelId, this.chess)
                 this.updateScores(modelId, opponentModelId, loser, white)
             }
 
@@ -87,6 +88,7 @@ class NeuralNetworkTrainer {
     resetModelScores() {
         for (let i = 0; i < this.modelScores.length; i++) {
             this.modelScores[i].score = 0;
+            this.modelScores[i].eatenPieces = 0;
         }
     }
 
@@ -104,21 +106,27 @@ class NeuralNetworkTrainer {
 
         let topHalf = [];
         let losers = [];
+        if (this.trainingGoal = "win") {
 
-        this.modelScores.sort(function(a, b) {
-            return a.distance - b.distance;
-        });
-        let nnTrainer = this;
-        this.modelScores.sort(function(a, b) { return nnTrainer.getModelScore(b) - nnTrainer.getModelScore(a) });
+            this.modelScores.sort(function(a, b) {
+                return a.distance - b.distance;
+            });
+            let nnTrainer = this;
+            this.modelScores.sort(function(a, b) { return nnTrainer.getModelScore(b) - nnTrainer.getModelScore(a) });
 
-        for (let i = 0; i < parseInt(this.models.length / 2); i++) {
-            topHalf.push(this.models[i]);
-            losers.push(this.models[this.models.length - i - 1]);
+            for (let i = 0; i < parseInt(this.models.length / 2); i++) {
+                topHalf.push(this.models[i]);
+                losers.push(this.models[this.models.length - i - 1]);
+            }
+
+            for (let i = 0; i < topHalf.length; i++) {
+                await this.cloneAndMutate(topHalf[0], losers[i]).then(r => r);
+            }
+        } else if (this.trainingGoal = "eat") {
+
         }
 
-        for (let i = 0; i < topHalf.length; i++) {
-            await this.cloneAndMutate(topHalf[i], losers[i]).then(r => r);
-        }
+
 
         this.models[9].model.getWeights()[0].print();
 
@@ -151,16 +159,16 @@ class NeuralNetworkTrainer {
         NNTrainer.models.push(NNTrainer.models[id].cloneModel());
     }
 
-    async playMatch(model0, model1, _chess) {
+    async playMatch(model0, modelId1, model1, modelId2, _chess) {
         this.chess = _chess
         this.chess.reset();
         board = Chessboard('board', this.chess.fen());
 
         let modelToMakeAMove = 0;
-        return await this.makeAMove(model0.model, model1.model, modelToMakeAMove).then(r => r)
+        return await this.makeAMove(model0, modelId1, model1, modelId2, modelToMakeAMove, []).then(r => r)
     }
 
-    async makeAMove(model0, model1, modelToMove) {
+    async makeAMove(model0, modelId0, model1, modelId1, modelToMove, history) {
         if (this.chess.game_over()) {
             if (game.in_checkmate) {
                 return modelToMove;
@@ -171,12 +179,26 @@ class NeuralNetworkTrainer {
             let move = "";
             let monteChess = new Chess();
             monteChess.load(this.chess.fen())
+            let currentModel;
+            let modelId;
+            let opponentModelId;
             if (modelToMove == 0) {
-                move = await monteCarlo.getBestMove(model0, monteChess).then(r => r);
+                currentModel = model0
+                modelId = modelId0;
+                opponentModelId = modelId1;
             } else {
-                move = await monteCarlo.getBestMove(model1, monteChess).then(r => r);
+                currentModel = model1
+                opponentModelId = modelId0;
+                modelId = modelId1;
             }
+            move = await monteCarlo.getBestMove(currentModel.model, monteChess, history).then(r => r);
+
             (async() => {
+                if (move.indexOf("x") != -1) {
+                    this.modelScores[modelId].eatenPieces++;
+                    this.modelScores[opponentModelId].eatenPieces--;
+                }
+                history.push(move);
                 this.chess.move(move);
                 board = Chessboard('board', this.chess.fen());
                 document.getElementById("moveMade").innerHTML = move;
@@ -188,7 +210,7 @@ class NeuralNetworkTrainer {
             await this.timeout(100).then(r => r);
 
             if (this.keepTraining) {
-                return this.makeAMove(model0, model1, modelToMove)
+                return this.makeAMove(model0, modelId0, model1, modelId1, modelToMove, history)
             } else {
                 return 3;
             }
@@ -257,5 +279,6 @@ class ModelScore {
     constructor(modelId) {
         this.modelId = modelId;
         this.score = 0;
+        this.eatenPieces = 0;
     }
 }

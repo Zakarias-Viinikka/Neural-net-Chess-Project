@@ -56,7 +56,7 @@ class NeuralNet {
     }
 
     createModel() {
-        const inputLayer = tf.layers.dense({ inputShape: 71, units: 10, activation: 'relu' });
+        const inputLayer = tf.layers.dense({ inputShape: 72, units: 10, activation: 'relu' });
         const hiddenLayer2 = tf.layers.dense({ units: 150, activation: 'relu' });
         const hiddenLayer3 = tf.layers.dense({ units: 100, activation: 'relu' });
         const hiddenLayer4 = tf.layers.dense({ units: 80, activation: 'relu' });

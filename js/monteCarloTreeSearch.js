@@ -5,12 +5,14 @@ class monteCarloTreeSearch {
         this.depth = depth;
         this.model = "model";
         this.treeBranchRoots = [];
+        this.history = [];
     }
 
-    async getBestMove(model, chess) {
+    async getBestMove(model, chess, history) {
         this.chess = chess;
         this.originalPosition = chess.fen();
         this.model = model;
+        this.history = history;
 
         await this.createTreeBranchRoots().then(r => r);
         this.treeBranchRoots.sort(function(a, b) { return a.evaluation - b.evaluation });
@@ -29,17 +31,29 @@ class monteCarloTreeSearch {
     async createTreeBranchRoots() {
         let chess = this.chess;
         let allPossibleMoves = chess.moves();
+        let removedMoves = 0;
         for (let i = 0; i < allPossibleMoves.length; i++) {
             let move = allPossibleMoves[i];
+            if (await this.matchEndsInRepetition(move, allPossibleMoves.length, removedMoves)) {
+                removedMoves++;
+                break;
+            }
             chess.load(this.originalPosition);
             chess.move(move);
-            let moveEvaluation = await this.evaluateMove(chess.fen()).then(r => r);
+            let moveEvaluation = await this.evaluateMove(chess, this.history, move, true);
             let newBoardPosition = this.chess.fen();
             this.treeBranchRoots.push(new treeBranchRoot(move, moveEvaluation, this, newBoardPosition));
             this.chess.load(this.originalPosition);
         }
     }
 
+    async matchEndsInRepetition(move, amountOfMoves, removedMoves) {
+        if (amountOfMoves - removedMoves > 1) {
+            if (move[71] == 1) {
+
+            }
+        }
+    }
     async treeSearch() {
         for (let i = 0; i < this.depth; i++) {
             let bestRoot = this.treeBranchRoots[this.treeBranchRoots.length - 1];
@@ -66,9 +80,9 @@ class monteCarloTreeSearch {
         return this.treeBranchRoots[rootIndex].evaluation;
     }
 
-    async evaluateMove(board) {
+    async evaluateMove(board, history, move, opponentTurn) {
         let moveEvaluation;
-        let chessboardAsArray = await ChessboardToNNInput(this.chess);
+        let chessboardAsArray = await ChessboardToNNInput(board, history, move, opponentTurn);
         let tfChessBoard = await tf.tensor2d([chessboardAsArray]);
         tf.tidy(() => {
 
@@ -88,6 +102,7 @@ class treeBranchRoot {
         this.originalEvaluation = evaluation;
         this.evaluation = evaluation;
         this.treeBranches = [];
+        this.opponentTurn = true;
     }
 
     async analyzeBestMove() {
@@ -103,11 +118,12 @@ class treeBranchRoot {
         let possibleMoves = this.monteCarlo.chess.moves();
         let chess = this.monteCarlo.chess;
         for (let i = 0; i < possibleMoves.length; i++) {
+            let move = possibleMoves[i];
             chess.load(this.boardPosition);
-            chess.move(possibleMoves[i]);
-            let evaluation = await this.monteCarlo.evaluateMove(chess.fen()).then(r => r);
+            chess.move(move);
+            let evaluation = await this.monteCarlo.evaluateMove(chess, monteCarlo.history, move, this.opponentTurn);
             let newBoardPosition = this.monteCarlo.chess.fen();
-            this.treeBranches.push(new treeBranch(this, this.monteCarlo, evaluation, newBoardPosition));
+            this.treeBranches.push(new treeBranch(this, this.monteCarlo, evaluation, newBoardPosition, this.opponentTurn));
             this.monteCarlo.chess.load(this.boardPosition);
         }
     }
@@ -124,12 +140,13 @@ class treeBranchRoot {
 }
 
 class treeBranch {
-    constructor(origin, monteCarlo, evaluation, boardPosition) {
+    constructor(origin, monteCarlo, evaluation, boardPosition, opponentTurn) {
         this.evaluation = evaluation;
         this.boardPosition = boardPosition;
         this.monteCarlo = monteCarlo;
         this.origin = origin;
         this.treeBranches = [];
+        this.opponentTurn = !opponentTurn;
     }
 
     async analyze() {
@@ -146,11 +163,12 @@ class treeBranch {
         let chess = this.monteCarlo.chess;
         let possibleMoves = chess.moves();
         for (let i = 0; i < possibleMoves.length; i++) {
+            let move = allPossibleMoves[i]
             chess.load(this.boardPosition);
-            chess.move(possibleMoves[i]);
-            let evaluation = await this.monteCarlo.evaluateMove(chess.fen()).then(r => r);
+            chess.move(move);
+            let evaluation = await this.monteCarlo.evaluateMove(chess, monteCarlo.history, move, this.opponentTurn);
             let newBoardPosition = this.monteCarlo.chess.fen();
-            this.treeBranches.push(new treeBranch(this, this.monteCarlo, evaluation, newBoardPosition));
+            this.treeBranches.push(new treeBranch(this, this.monteCarlo, evaluation, newBoardPosition, this.opponentTurn));
 
             chess.load(this.boardPosition);
         }

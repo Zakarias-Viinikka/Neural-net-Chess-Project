@@ -1,4 +1,4 @@
-async function ChessboardToNNInput(chessboard) {
+async function ChessboardToNNInput(chessboard, currentMove, history, opponentTurn) {
     let boardAs2DArray = chessboard.board();
     let chessboardAsArray = [];
     this.getPieceValue = function(type, color) {
@@ -61,31 +61,6 @@ async function ChessboardToNNInput(chessboard) {
         }
     }
 
-    let halfMoves = "";
-    let halfMovesArr = [];
-    let halfMovesDone = false;
-    let repeats = "";
-    for (let i = lastPartOfFEN.length; i > 0; i--) {
-        if (!halfMovesDone) {
-            if (lastPartOfFEN.indexOf(i) == " ") {
-                halfMovesDone = true;
-                for (let j = halfMovesArr.length; j > 0; j--) {
-                    halfMoves += halfMovesArr[j];
-                }
-                halfMoves = parseFloat(halfMoves) / 50;
-            } else {
-                halfMovesArr.push(lastPartOfFEN.indexOf(i))
-            }
-        } else {
-            if (lastPartOfFEN.indexOf(i) == " ") {
-                break;
-            } else {
-                repeats = parseInt(lastPartOfFEN.indexOf(i)) / 2;
-            }
-        }
-    }
-    chessboardAsArray.push(halfMoves);
-    chessboardAsArray.push(repeats);
     //includes allowed castles and whose turn it is into the final array that will be the input for the NN
 
     if (lastPartOfFEN.indexOf("w") != -1) {
@@ -114,6 +89,35 @@ async function ChessboardToNNInput(chessboard) {
     } else {
         chessboardAsArray.push(0);
     }
+
+    if (opponentTurn == null) {
+        chessboardAsArray.push(0);
+    } else if (opponentTurn) {
+        chessboardAsArray.push(1);
+    }
+
+    let halfMoves = "";
+    let halfMovesArr = [];
+    for (let i = lastPartOfFEN.length; i > 0; i--) {
+        if (lastPartOfFEN.indexOf(i) == " ") {
+            for (let j = halfMovesArr.length; j > 0; j--) {
+                halfMoves += halfMovesArr[j];
+            }
+            halfMoves = parseFloat(halfMoves) / 100;
+            break;
+        } else {
+            halfMovesArr.push(lastPartOfFEN.indexOf(i))
+        }
+    }
+    chessboardAsArray.push(halfMoves);
+
+    let repetitions = 0;
+    for (let i = 0; i < history.length; i++) {
+        if (history[i] == currentMove) {
+            repetitions += 0.33;
+        }
+    }
+    chessboardAsArray.push(repetitions);
     //enpassant
     return chessboardAsArray;
 }
