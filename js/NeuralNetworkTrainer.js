@@ -89,9 +89,11 @@ class NeuralNetworkTrainer {
 
             //update visually scores so far
             let winner = (loser == blackId ? whiteId : blackId)
-            document.getElementById("modelThatWon").innerHTML = winner;
-            document.getElementById("modelThatWonColor").innerHTML = (winner == whiteId ? "white" : "black");
-            document.getElementById("tournamentScores").innerHTML = "";
+            if (this.keepTraining) {
+                document.getElementById("modelThatWon").innerHTML = winner;
+                document.getElementById("modelThatWonColor").innerHTML = (winner == whiteId ? "white" : "black");
+                document.getElementById("tournamentScores").innerHTML = "";
+            }
             for (let j = 0; j < this.modelScores.length; j++) {
                 let modelScore = this.modelScores[j];
                 document.getElementById("tournamentScores").innerHTML += "Model Id" + modelScore.modelId + " Score: " + modelScore.score + "<br>";
@@ -334,40 +336,6 @@ class NeuralNetworkTrainer {
 
     timeout(ms) {
         return new Promise(resolve => setTimeout(resolve, ms))
-    }
-
-    async testIfWinnerIsAssignedPointsCorrectly() {
-        let id0 = 2;
-        let id1 = 1;
-        let white = id0;
-        let model0 = this.models[id0];
-        let model1 = this.models[id1];
-        board = Chessboard('board', this.chess.fen());
-
-        this.chess.load("QQQBkNKB/PPPNN1QB/PPPPRBPP/PPPRRRPP/PPPPPPPP/PPPPPPPP/PPPPPPPP/RNBQRBNR w - - 0 1");
-
-        let results = await this.playTestMatch(model0, model1, id0, id1, this.chess, white).then(r => r);
-        await this.testResults(results, model0, model1, id0, id1, white).then(r => r);
-    }
-
-    async playTestMatch(model0, model1, id0, id1, _chess, white) {
-        return await this.makeAMove(model0, id0, model1, id1, white, new Array(), ).then(r => r);
-        //model0, modelId0, model1, modelId1, modelToMove, history, oneMoveAgo, twoMovesAgo
-    }
-
-    async testResults(r, model1, model2, id0, id1, white) {
-        let nextToMakeMove = r;
-        if (white == id0 && nextToMakeMove == 1 || white == id1 && nextToMakeMove == 0) {
-            this.updateModelScore(id0, 1)
-            this.updateModelScore(id1, -1)
-        } else {
-            this.updateModelScore(id0, -1)
-            this.updateModelScore(id1, 1)
-        }
-        this.updateScores(id0, id1, r, white);
-        console.log("next to make a move: " + nextToMakeMove);
-        console.log("id for white: " + white);
-        console.log("scores are: [" + id0 + "] " + this.getModelScore(id0) + ",  [" + id1 + "] " + this.getModelScore(id1))
     }
 
     getModelScore(modelId) {

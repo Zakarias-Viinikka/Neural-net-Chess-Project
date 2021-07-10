@@ -85,6 +85,7 @@
 
 
             <button class="btn btn-secondary" id="updateBoard">Update Board</button>
+            <button class="btn btn-secondary" id="play1MoveOnly">Update Board</button>
 
         </div>
         <div class="row">
@@ -202,7 +203,7 @@
         let testModelId0 = 0;
         let testModelId1 = 1;
 
-        document.getElementById("play1MoveOnly").addEventListener("click"
+        document.getElementById("play1MoveOnly").addEventListener("click",
             async() => {
                 modelId = i;
                 opponentModelId = this.models.length - i - 1;
