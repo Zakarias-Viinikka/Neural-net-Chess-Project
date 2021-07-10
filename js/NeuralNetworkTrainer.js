@@ -170,7 +170,7 @@ class NeuralNetworkTrainer {
     }
 
     updateScores(white, black, loser) {
-        if (nextToMakeMove != "draw") {
+        if (loser != "draw") {
             if (loser == black) {
                 this.updateModelScore(white, 1)
                 this.updateModelScore(black, -1)
