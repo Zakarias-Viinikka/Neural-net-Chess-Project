@@ -136,6 +136,17 @@ class treeBranchRoot {
     async updateEvaluations(evaluation) {
         this.evaluation = evaluation;
 
+        for (let i = this.treeBranches.length - 1; i > 0; i--) {
+            let newEvaluation = this.treeBranches[i].evaluation;
+            if (newEvaluation < this.treeBranches[i - 1].evaluation) {
+                let tmp = this.treeBranches[i - 1].evaluation;
+                this.treeBranches[i - 1].evaluation = newEvaluation;
+                this.treeBranches[i].evaluation = tmp;
+            } else {
+                break;
+            }
+        }
+
         this.monteCarlo.treeBranchRoots.sort(function(a, b) { return a.evaluation - b.evaluation });
     }
 }
