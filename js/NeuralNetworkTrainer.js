@@ -114,7 +114,7 @@ class NeuralNetworkTrainer {
             let nnTrainer = this;
             this.modelScores.sort(function(a, b) { return nnTrainer.getModelScore(b) - nnTrainer.getModelScore(a) });
 
-            for (let i = 0; i < parseInt(this.models.length / 2); i++) {
+            for (let i = 0; i < 2; i++) {
                 topHalf.push(this.models[i]);
                 losers.push(this.models[this.models.length - i - 1]);
             }
