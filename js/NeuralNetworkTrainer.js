@@ -52,20 +52,20 @@ class NeuralNetworkTrainer {
         document.getElementById("matchNumber").innerHTML = this.matchesPlayed;
         let modelId = 0;
         let opponentModelId = 1;
-        let loser = 0;
-        let white;
-        let black;
+        let loser = "";
+        let whiteId;
+        let blackId;
         for (let i = 0; i < parseInt(this.models.length / 2); i++) {
             modelId = i;
             opponentModelId = this.models.length - i - 1;
             if (Math.floor(Math.random() * 2) == 0) {
-                white = modelId;
-                black = opponentModelId;
+                whiteId = modelId;
+                blackId = opponentModelId;
             } else {
-                white = opponentModelId
-                black = modelId
+                whiteId = opponentModelId;
+                blackId = modelId;
             }
-            if (white == modelId) {
+            if (whiteId == modelId) {
                 await this.playMatch(this.models[modelId], modelId, this.models[opponentModelId], opponentModelId, this.chess).then(r => loser = r)
                 if (loser == 0) {
                     loser = modelId;
@@ -74,7 +74,7 @@ class NeuralNetworkTrainer {
                 } else {
                     loser = "draw";
                 }
-                this.updateScores(white, black, loser)
+                this.updateScores(whiteId, blackId, loser)
             } else {
                 await this.playMatch(this.models[opponentModelId], opponentModelId, this.models[modelId], modelId, this.chess).then(r => loser = r)
                 if (loser == 1) {
@@ -84,7 +84,7 @@ class NeuralNetworkTrainer {
                 } else {
                     loser = "draw";
                 }
-                this.updateScores(white, black, loser)
+                this.updateScores(whiteId, blackId, loser)
             }
 
             //update visually scores so far
@@ -248,7 +248,7 @@ class NeuralNetworkTrainer {
     }
 
     async playMatch(white, whiteId, black, blackId, _chess) {
-        document.getElementById("modelThatIsWhite").innerHTML = white;
+        document.getElementById("modelThatIsWhite").innerHTML = whiteId;
         this.chess = _chess;
         this.chess.reset();
         board = Chessboard('board', this.chess.fen());

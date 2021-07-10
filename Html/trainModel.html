@@ -179,20 +179,20 @@
         }
 
         document.getElementById("startTheTraining").addEventListener("click", async() => {
-            if (NNTrainer != null) {
-                let btn = document.getElementById("startTheTraining");
-                if (btn.innerHTML == "Start Training") {
-                    btn.innerHTML = "Pause Training";
-                    NNTrainer.keepTraining = true;
-                } else {
-                    btn.innerHTML = "Start Training";
-                    setTimeout(() => {
-                        NNTrainer.keepTraining = false;
-                    }, 100);
+            let btn = document.getElementById("startTheTraining");
+            if (btn.innerHTML == "Start Training") {
+                btn.innerHTML = "Pause Training";
+            } else {
+                btn.innerHTML = "Start Training";
+            }
 
-                }
-                if (NNTrainer.keepTraining == true) {
-                    await NNTrainer.startTraining();
+            await NNTrainer.timeout(500);
+
+            if (NNTrainer != null) {
+                if (btn.innerHTML == "Pause Training") {
+                    NNTrainer.startTraining();
+                } else {
+                    NNTrainer.keepTraining = false;
                 }
             }
         })
