@@ -175,8 +175,8 @@ class NeuralNetworkTrainer {
                 this.updateModelScore(white, 1)
                 this.updateModelScore(black, -1)
             } else {
-                this.updateModelScore(model0Id, -1)
-                this.updateModelScore(model1Id, 1)
+                this.updateModelScore(white, -1)
+                this.updateModelScore(black, 1)
             }
         }
     }
