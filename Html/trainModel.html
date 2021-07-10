@@ -48,6 +48,9 @@
                 <div id="tournamentScores"></div>
                 <h5>Match number: <span id="matchNumber"></span></h5>
             </div>
+            <div class="col">
+                <div id="board2" style="width: 200px"></div>
+            </div>
         </div>
         <div class="row">
             Depth:
@@ -76,6 +79,8 @@
         <div class="row">
             <input type="text" id="loadModelName" placeholder="File name">
             <button class="btn btn-secondary" id="loadFromFiles">Load model from files</button>
+        </div>
+        <div class="row">
         </div>
     </div>
 
@@ -137,6 +142,7 @@
 
         var game = new Chess();
         let board = Chessboard('board', 'start');
+        let board2 = Chessboard('board2', 'start');
 
         document.getElementById("CreateNewModels").addEventListener("click", async() => {
             for (let i = 0; i < 10; i++) {

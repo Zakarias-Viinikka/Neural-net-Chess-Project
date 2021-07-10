@@ -21,9 +21,9 @@ class NeuralNetworkTrainer {
     }
 
     async addModelToTrainer(modelPath) {
-        let model = this.createModel(modelPath);
+        let model = await this.createModel(modelPath);
         this.models.push(new NeuralNetwork(model));
-        this.modelScores.push(new ModelScore(this.models.length));
+        this.modelScores.push(new ModelScore(this.models.length - 1));
     }
 
     stopTraining() {
@@ -105,13 +105,13 @@ class NeuralNetworkTrainer {
             let modelPath = 'http://localhost/models/' + modelName + ".json";
             await this.addModelToTrainer(modelPath);
         }
+        this.models[0].model.getWeights()[0].print();
     }
 
     async loadModels() {
         for (let i = 0; i < 10; i++) {
             let modelPath = 'indexeddb://model' + i;
             await this.addModelToTrainer(modelPath);
-            console.log(this.models[i].model);
         }
     }
 
@@ -235,6 +235,7 @@ class NeuralNetworkTrainer {
 
     async makeAMove(model0, modelId0, model1, modelId1, modelToMove, history) {
         if (this.chess.game_over()) {
+            board2 = Chessboard('board', this.chess.fen());
             if (game.in_checkmate) {
                 return modelToMove;
             } else {
