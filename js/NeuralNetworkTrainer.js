@@ -69,7 +69,7 @@ class NeuralNetworkTrainer {
                 await this.playMatch(this.models[modelId], modelId, this.models[opponentModelId], opponentModelId, this.chess).then(r => loser = r)
                 if (loser == 0) {
                     loser = modelId;
-                } else if (loser == 2) {
+                } else if (loser == 1) {
                     loser = opponentModelId;
                 } else {
                     loser = "draw";
@@ -170,6 +170,7 @@ class NeuralNetworkTrainer {
     }
 
     updateScores(white, black, loser) {
+        console.log(white, black, loser);
         if (loser != "draw") {
             if (loser == black) {
                 this.updateModelScore(white, 1)
@@ -259,18 +260,7 @@ class NeuralNetworkTrainer {
 
     async makeAMove(model0, modelId0, model1, modelId1, modelToMove, history, oneMoveAgo, twoMovesAgo) {
         if (this.chess.game_over()) {
-            Chessboard('board4', {
-                position: this.chess.fen(),
-                showNotation: false
-            });
-            Chessboard('board3', {
-                position: oneMoveAgo,
-                showNotation: false
-            });
-            Chessboard('board2', {
-                position: twoMovesAgo,
-                showNotation: false
-            });
+            this.updateLastGameBoard(this.chess, oneMoveAgo, twoMovesAgo);
             if (game.in_checkmate) {
                 return modelToMove;
             } else {
@@ -281,16 +271,10 @@ class NeuralNetworkTrainer {
             let monteChess = new Chess();
             monteChess.load(this.chess.fen())
             let currentModel;
-            let modelId;
-            let opponentModelId;
             if (modelToMove == 0) {
                 currentModel = model0
-                modelId = modelId0;
-                opponentModelId = modelId1;
             } else {
                 currentModel = model1
-                opponentModelId = modelId0;
-                modelId = modelId1;
             }
             move = await monteCarlo.getBestMove(currentModel.model, monteChess, history).then(r => r);
 
@@ -328,6 +312,22 @@ class NeuralNetworkTrainer {
                 return 3;
             }
         }
+    }
+
+    updateLastGameBoard(thisTurn, oneMoveAgo, twoMovesAgo) {
+
+        Chessboard('board4', {
+            position: thisTurn,
+            showNotation: false
+        });
+        Chessboard('board3', {
+            position: oneMoveAgo,
+            showNotation: false
+        });
+        Chessboard('board2', {
+            position: twoMovesAgo,
+            showNotation: false
+        });
     }
 
     timeout(ms) {
