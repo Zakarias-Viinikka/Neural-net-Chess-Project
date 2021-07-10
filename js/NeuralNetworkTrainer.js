@@ -5,6 +5,7 @@ class NeuralNetworkTrainer {
         this.rate = 1; //in percentages %
         this.modelScores = [];
         this.chess = chess;
+        this.matchesPlayed = 0;
 
         if (localStorage.getItem("matchesPlayed") == null) {
             localStorage.setItem("matchesPlayed", "0");
@@ -19,8 +20,9 @@ class NeuralNetworkTrainer {
         }
     }
 
-    async addModelToTrainer(model) {
-        this.models.push(model);
+    async addModelToTrainer(modelPath) {
+        let model = this.createModel(modelPath);
+        this.models.push(new NeuralNetwork(model));
         this.modelScores.push(new ModelScore(this.models.length));
     }
 
@@ -79,12 +81,14 @@ class NeuralNetworkTrainer {
             matchesPlayed++;
             localStorage.setItem("matchesPlayed", matchesPlayed);
         }
+        this.matchesPlayed++;
+        document.getElementById("matchNumber").innerHTML = this.matchesPlayed;
     }
 
     async saveModels() {
         if (this.keepTraining) {
             for (let i = 0; i < this.models.length; i++) {
-                let savePath = 'model' + i
+                let savePath = 'model' + i;
                 const saveResult = await this.models[i].model.save('indexeddb://' + savePath).then(r => r);
 
             }
@@ -99,14 +103,42 @@ class NeuralNetworkTrainer {
     async loadFromFiles(modelName) {
         for (let i = 0; i < 10; i++) {
             let modelPath = 'http://localhost/models/' + modelName + ".json";
-            await this.addModelToTrainer(new NeuralNet(modelPath))
+            await this.addModelToTrainer(modelPath);
         }
     }
 
-    async loadTheModels() {
+    async loadModels() {
         for (let i = 0; i < 10; i++) {
             let modelPath = 'indexeddb://model' + i;
-            await this.addModelToTrainer(new NeuralNet(modelPath));
+            await this.addModelToTrainer(modelPath);
+            console.log(this.models[i].model);
+        }
+    }
+
+    async createModel(modelSavePath) {
+        if (modelSavePath == null) {
+            const inputLayer = tf.layers.dense({ inputShape: 72, units: 10, activation: 'relu' });
+            const hiddenLayer1 = tf.layers.dense({ units: 72, activation: 'relu' });
+            const hiddenLayer2 = tf.layers.dense({ units: 50, activation: 'relu' });
+            const hiddenLayer3 = tf.layers.dense({ units: 25, activation: 'relu' });
+            const hiddenLayer4 = tf.layers.dense({ units: 5, activation: 'relu' });
+            const outputLayer = tf.layers.dense({ units: 1, activation: 'sigmoid' });
+
+            const model = tf.sequential();
+            model.add(inputLayer);
+            model.add(hiddenLayer1);
+            model.add(hiddenLayer2);
+            model.add(hiddenLayer3);
+            model.add(hiddenLayer4);
+            model.add(outputLayer);
+            model.compile({
+                optimizer: 'sgd',
+                loss: 'meanSquaredError'
+            })
+
+            return await model;
+        } else {
+            return await tf.loadLayersModel(modelSavePath);
         }
     }
 

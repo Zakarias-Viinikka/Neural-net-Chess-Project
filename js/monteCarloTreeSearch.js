@@ -164,7 +164,7 @@ class treeBranch {
         let chess = this.monteCarlo.chess;
         let possibleMoves = chess.moves();
         for (let i = 0; i < possibleMoves.length; i++) {
-            let move = allPossibleMoves[i]
+            let move = possibleMoves[i]
             chess.load(this.boardPosition);
             chess.move(move);
             let evaluation = await this.monteCarlo.evaluateMove(chess, monteCarlo.history, move, this.opponentTurn);

@@ -46,6 +46,7 @@
             <div class="col">
                 <h5>Scores so far:</h5>
                 <div id="tournamentScores"></div>
+                <h5>Match number: <span id="matchNumber"></span></h5>
             </div>
         </div>
         <div class="row">
@@ -73,7 +74,7 @@
             <button class="btn btn-secondary" id="saveModelToDownloads">Save Model to Downloads</button>
         </div>
         <div class="row">
-            <input type="text" id="loadModelName" placeholder="Download name">
+            <input type="text" id="loadModelName" placeholder="File name">
             <button class="btn btn-secondary" id="loadFromFiles">Load model from files</button>
         </div>
     </div>
@@ -97,12 +98,23 @@
     <script src="../js/NeuralNetworkTrainer.js"></script>
     <script src="../js/monteCarloTreeSearch.js"></script>
     <script>
-        async function changeGoal(goal) {
-            NNTrainer.trainingGoal = goal;
-        }
         let depth = localStorage.getItem("treeSearchDepth");
         if (depth == null) {
             localStorage.setItem("treeSearchDepth", 0);
+            depth = 0;
+        }
+        let slider = document.getElementById("depthSlider");
+        slider.value = depth;
+        var depthSpan = document.getElementById("depthSpan");
+        depthSpan.innerHTML = slider.value;
+
+        slider.oninput = function() {
+            depthSpan.innerHTML = this.value;
+            monteCarlo.depth = this.value;
+            localStorage.setItem("treeSearchDepth", this.value);
+        }
+        async function changeGoal(goal) {
+            NNTrainer.trainingGoal = goal;
         }
         document.getElementById("testMonteSpeed").addEventListener("click", () => {
             NNTrainer.monteCarloSpeedTester();
@@ -127,14 +139,10 @@
         let board = Chessboard('board', 'start');
 
         document.getElementById("CreateNewModels").addEventListener("click", async() => {
-            let models = await CreateNewModels().then(r => r);
-            //console.log(models)
-            for (let i = 0; i < models.length; i++) {
-                await NNTrainer.addModelToTrainer(models[i]).then(r => null);
+            for (let i = 0; i < 10; i++) {
+                await NNTrainer.addModelToTrainer();
             }
             await mutateModels().then(response => NNTrainer.models[0].model.getWeights()[0].print());
-            //NNTrainer.models[0].model.getWeights()[0].print();
-
         });
 
         async function mutateModels() {
@@ -165,13 +173,6 @@
             }
         })
 
-        async function CreateNewModels() {
-            let models = []
-            for (let index = 0; index < 10; index++) {
-                models.push(new NeuralNet());
-            }
-            return models;
-        }
 
         document.getElementById("playBestMove").addEventListener("click", playBestMoveFunction);
 
@@ -188,25 +189,9 @@
             board = Chessboard('board', game.fen());
         });
 
-        var slider = document.getElementById("depthSlider");
-        var depthSpan = document.getElementById("depthSpan");
-        depthSpan.innerHTML = slider.value;
-
-        slider.oninput = function() {
-            depthSpan.innerHTML = this.value;
-            monteCarlo.depth = this.value;
-            localStorage.setItem("treeSearchDepth", this.value);
-        }
-
         document.getElementById("loadModel").addEventListener("click", async() => {
-            await NNTrainer.loadTheModels().then(r => console.log("loaded models"));
-            await showProofOfLoadedModels().then(r => r)
-        })
-
-
-        async function showProofOfLoadedModels() {
-            NNTrainer.models[0].model.getWeights()[0].print();
-        }
+            await NNTrainer.loadModels().then(r => NNTrainer.models[0].model.getWeights()[0].print());
+        });
     </script>
 </body>
 

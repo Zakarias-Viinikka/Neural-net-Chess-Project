@@ -1,8 +1,6 @@
-class NeuralNet {
-    constructor(modelSavePath) {
-        (async() => {
-            return await this.createModel(modelSavePath);
-        })().then(r => this.model = r);
+class NeuralNetwork {
+    constructor(model) {
+        this.model = model;
         this._zig = new Ziggurat();
     }
 
@@ -59,32 +57,5 @@ class NeuralNet {
         this.model.setWeights(mutatedWeights);
         tf.dispose(mutatedWeights);
         console.log(tf.memory().numTensors)
-    }
-
-    async createModel(modelSavePath) {
-        if (modelSavePath == null) {
-            const inputLayer = tf.layers.dense({ inputShape: 72, units: 10, activation: 'relu' });
-            const hiddenLayer1 = tf.layers.dense({ units: 72, activation: 'relu' });
-            const hiddenLayer2 = tf.layers.dense({ units: 50, activation: 'relu' });
-            const hiddenLayer3 = tf.layers.dense({ units: 25, activation: 'relu' });
-            const hiddenLayer4 = tf.layers.dense({ units: 5, activation: 'relu' });
-            const outputLayer = tf.layers.dense({ units: 1, activation: 'sigmoid' });
-
-            const model = tf.sequential();
-            model.add(inputLayer);
-            model.add(hiddenLayer1);
-            model.add(hiddenLayer2);
-            model.add(hiddenLayer3);
-            model.add(hiddenLayer4);
-            model.add(outputLayer);
-            model.compile({
-                optimizer: 'sgd',
-                loss: 'meanSquaredError'
-            })
-
-            return await model;
-        } else {
-            return await tf.loadLayersModel(modelSavePath)
-        }
     }
 }
