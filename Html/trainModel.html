@@ -199,20 +199,73 @@
             }
         })
 
+        let testModelId0 = 0;
+        let testModelId1 = 1;
 
-        document.getElementById("playBestMove").addEventListener("click", playBestMoveFunction);
+        document.getElementById("play1MoveOnly").addEventListener("click"
+            async() => {
+                modelId = i;
+                opponentModelId = this.models.length - i - 1;
+                if (Math.floor(Math.random() * 2) == 0) {
+                    whiteId = modelId;
+                    blackId = opponentModelId;
+                } else {
+                    whiteId = opponentModelId;
+                    blackId = modelId;
+                }
+                if (whiteId == modelId) {
+                    await this.playMatch(this.models[modelId], modelId, this.models[opponentModelId], opponentModelId, this.chess).then(r => loser = r)
+                    if (loser == 0) {
+                        loser = modelId;
+                    } else if (loser == 1) {
+                        loser = opponentModelId;
+                    } else {
+                        loser = "draw";
+                    }
+                    this.updateScores(whiteId, blackId, loser)
+                } else {
+                    await this.playMatch(this.models[opponentModelId], opponentModelId, this.models[modelId], modelId, this.chess).then(r => loser = r)
+                    if (loser == 1) {
+                        loser = modelId;
+                    } else if (loser == 0) {
+                        loser = opponentModelId;
+                    } else {
+                        loser = "draw";
+                    }
+                    this.updateScores(whiteId, blackId, loser)
+                }
 
-        function playBestMoveFunction() {
-            game.move(possibleMovesMonte[bestMoveIndex]);
-            board = Chessboard('board', game.fen());
-        }
+            })
+        document.getElementById("playBestMove").addEventListener("click", () => {
+            NNTrainer.chess.move(bestMove);
 
-        document.getElementById("predictBestMove").addEventListener("click", () => {
-            monteCarloTreeSearch(depth, NNTrainer.models[0].model)
+
+            moveTurn = (moveTurn + 1) % 2;
+            board = Chessboard('board', NNTrainer.chess.fen());
+        });
+
+        let bestMove = "";
+        let predictBestMoveHistory = [];
+        let moveTurn = 0;
+        document.getElementById("predictBestMove").addEventListener("click", async() => {
+            //(model, chess, history)
+            let monteChess = new Chess();
+            monteChess.load(NNTrainer.chess.fen());
+            bestMove = await monteCarlo.getBestMove(NNTrainer.models[0].model, monteChess, predictBestMoveHistory);
+            console.log(bestMove);
+            while (true) {
+                let fenCharacter = NNTrainer.chess.fen().charAt(ctr);
+                if (fenCharacter == " ") {
+                    break;
+                }
+                justBoardStateAsFenString += fenCharacter;
+                ctr++;
+            }
+            predictBestMoveHistory.push(justBoardStateAsFenString);
         });
 
         document.getElementById("updateBoard").addEventListener("click", () => {
-            board = Chessboard('board', game.fen());
+            board = Chessboard('board', NNTrainer.chess.fen());
         });
 
         document.getElementById("loadModel").addEventListener("click", async() => {
