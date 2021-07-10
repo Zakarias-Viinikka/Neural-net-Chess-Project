@@ -88,10 +88,13 @@ class NeuralNetworkTrainer {
             }
 
             //update visually scores so far
+            let winner = (loser == blackId ? whiteId : blackId)
+            document.getElementById("modelThatWon").innerHTML = winner;
+            document.getElementById("modelThatWonColor").innerHTML = (winner == whiteId ? "white" : "black");
             document.getElementById("tournamentScores").innerHTML = "";
             for (let j = 0; j < this.modelScores.length; j++) {
                 let modelScore = this.modelScores[j];
-                document.getElementById("tournamentScores").innerHTML += modelScore.modelId + ": " + modelScore.score + "<br>";
+                document.getElementById("tournamentScores").innerHTML += "Model Id" + modelScore.modelId + " Score: " + modelScore.score + "<br>";
 
             }
 
@@ -170,7 +173,6 @@ class NeuralNetworkTrainer {
     }
 
     updateScores(white, black, loser) {
-        console.log(white, black, loser);
         if (loser != "draw") {
             if (loser == black) {
                 this.updateModelScore(white, 1)
