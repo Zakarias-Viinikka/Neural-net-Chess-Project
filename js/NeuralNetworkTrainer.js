@@ -234,13 +234,35 @@ class NeuralNetworkTrainer {
         return await this.makeAMove(model0, modelId0, model1, modelId1, modelToMakeAMove, []).then(r => r)
     }
 
-    async makeAMove(model0, modelId0, model1, modelId1, modelToMove, history) {
-        let oneMoveAgo;
-        let twoMovesAgo;
+    async makeAMove(model0, modelId0, model1, modelId1, modelToMove, history, oneMoveAgo, twoMovesAgo, threeMovesAgo, fourMovesAgo, fiveMovesAgo) {
         if (this.chess.game_over()) {
-            board2 = Chessboard('board4', this.chess.fen());
-            board2 = Chessboard('board3', oneMoveAgo);
-            board2 = Chessboard('board2', twoMovesAgo);
+            Chessboard('board7', {
+                position: this.chess.fen(),
+                showNotation: false
+            });
+
+            Chessboard('board6', {
+                position: oneMoveAgo,
+                showNotation: false
+            });
+            Chessboard('board5', {
+                position: twoMovesAgo,
+                showNotation: false
+            });
+            Chessboard('board4', {
+                position: threeMovesAgo,
+                showNotation: false
+            });
+            Chessboard('board3', {
+                position: fourMovesAgo,
+                showNotation: false
+            });
+            Chessboard('board2', {
+                position: fiveMovesAgo,
+                showNotation: false
+            });
+            console.log(oneMoveAgo);
+            console.log(twoMovesAgo);
             if (game.in_checkmate) {
                 return modelToMove;
             } else {
@@ -268,6 +290,9 @@ class NeuralNetworkTrainer {
                 if (move.indexOf("p") != -1 || move.indexOf("P") != -1) {
                     history = [];
                 }
+                fiveMovesAgo = oneMoveAgo;
+                fourMovesAgo = oneMoveAgo;
+                threeMovesAgo = oneMoveAgo;
                 twoMovesAgo = oneMoveAgo;
                 oneMoveAgo = this.chess.fen();
                 this.chess.move(move);
@@ -293,7 +318,7 @@ class NeuralNetworkTrainer {
             await this.timeout(100).then(r => r);
 
             if (this.keepTraining) {
-                return this.makeAMove(model0, modelId0, model1, modelId1, modelToMove, history)
+                return this.makeAMove(model0, modelId0, model1, modelId1, modelToMove, history, oneMoveAgo, twoMovesAgo, threeMovesAgo, fourMovesAgo, fiveMovesAgo)
             } else {
                 return 3;
             }

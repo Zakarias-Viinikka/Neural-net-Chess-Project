@@ -60,6 +60,9 @@
                 <div id="board2" class="historyBoard" style="width: 200px"></div>
                 <div id="board3" class="historyBoard" style="width: 200px"></div>
                 <div id="board4" class="historyBoard" style="width: 200px"></div>
+                <div id="board5" class="historyBoard" style="width: 200px"></div>
+                <div id="board6" class="historyBoard" style="width: 200px"></div>
+                <div id="board7" class="historyBoard" style="width: 200px"></div>
                 <br>
                 <h5>Model that is white:</h5> <span id="modelThatIsWhite"></span>
             </div>
@@ -154,9 +157,24 @@
 
         var game = new Chess();
         let board = Chessboard('board', 'start');
-        let board2 = Chessboard('board2', 'start');
-        let board3 = Chessboard('board3', 'start');
-        let board4 = Chessboard('board4', 'start');
+        let board2 = Chessboard('board2', {
+            showNotation: false
+        });
+        let board3 = Chessboard('board3', {
+            showNotation: false
+        });
+        let board4 = Chessboard('board4', {
+            showNotation: false
+        });
+        let board5 = Chessboard('board5', {
+            showNotation: false
+        });
+        let board6 = Chessboard('board6', {
+            showNotation: false
+        });
+        let board7 = Chessboard('board7', {
+            showNotation: false
+        });
 
 
         document.getElementById("CreateNewModels").addEventListener("click", async() => {
