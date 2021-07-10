@@ -33,7 +33,7 @@ class NeuralNetworkTrainer {
     async startTraining() {
         console.log("Started Training");
 
-        await this.tournament().then(r => r);
+        await this.tournament();
 
         console.log("All matches concluded");
         console.log("memory: " + tf.memory().numTensors)
@@ -43,25 +43,48 @@ class NeuralNetworkTrainer {
         await this.evolution().then(r => r);
 
         if (this.keepTraining) {
-            await this.startTraining().then(r => r);
+            await this.startTraining();
         }
     }
 
     async tournament() {
+        this.matchesPlayed++;
+        document.getElementById("matchNumber").innerHTML = this.matchesPlayed;
         let modelId = 0;
         let opponentModelId = 1;
         let loser = 0;
-        let white = 0;
+        let white;
+        let black;
         for (let i = 0; i < parseInt(this.models.length / 2); i++) {
-            white = Math.floor(Math.random() * 2);
             modelId = i;
             opponentModelId = this.models.length - i - 1;
-            if (white == 1) {
-                loser = await this.playMatch(this.models[modelId], modelId, this.models[opponentModelId], opponentModelId, this.chess)
-                this.updateScores(modelId, opponentModelId, loser, white)
+            if (Math.floor(Math.random() * 2) == 0) {
+                white = modelId;
+                black = opponentModelId;
             } else {
-                loser = await this.playMatch(this.models[opponentModelId], modelId, this.models[modelId], opponentModelId, this.chess)
-                this.updateScores(modelId, opponentModelId, loser, white)
+                white = opponentModelId
+                black = modelId
+            }
+            if (white == modelId) {
+                await this.playMatch(this.models[modelId], modelId, this.models[opponentModelId], opponentModelId, this.chess).then(r => loser = r)
+                if (loser == 0) {
+                    loser = modelId;
+                } else if (loser == 2) {
+                    loser = opponentModelId;
+                } else {
+                    loser = "draw";
+                }
+                this.updateScores(white, black, loser)
+            } else {
+                await this.playMatch(this.models[opponentModelId], opponentModelId, this.models[modelId], modelId, this.chess).then(r => loser = r)
+                if (loser == 1) {
+                    loser = modelId;
+                } else if (loser == 0) {
+                    loser = opponentModelId;
+                } else {
+                    loser = "draw";
+                }
+                this.updateScores(white, black, loser)
             }
 
             //update visually scores so far
@@ -81,8 +104,6 @@ class NeuralNetworkTrainer {
             matchesPlayed++;
             localStorage.setItem("matchesPlayed", matchesPlayed);
         }
-        this.matchesPlayed++;
-        document.getElementById("matchNumber").innerHTML = this.matchesPlayed;
     }
 
     async saveModels() {
@@ -148,13 +169,15 @@ class NeuralNetworkTrainer {
         }
     }
 
-    updateScores(model0Id, model1Id, loser, white) {
-        if (white == 0 && loser == 1 || white == 1 && loser == 0) {
-            this.updateModelScore(model0Id, 1)
-            this.updateModelScore(model1Id, -1)
-        } else {
-            this.updateModelScore(model0Id, -1)
-            this.updateModelScore(model1Id, 1)
+    updateScores(white, black, loser) {
+        if (nextToMakeMove != "draw") {
+            if (loser == black) {
+                this.updateModelScore(white, 1)
+                this.updateModelScore(black, -1)
+            } else {
+                this.updateModelScore(model0Id, -1)
+                this.updateModelScore(model1Id, 1)
+            }
         }
     }
 
@@ -224,45 +247,30 @@ class NeuralNetworkTrainer {
         NNTrainer.models.push(NNTrainer.models[id].cloneModel());
     }
 
-    async playMatch(model0, modelId0, model1, modelId1, _chess) {
-        document.getElementById("modelThatIsWhite").innerHTML = modelId0
-        this.chess = _chess
+    async playMatch(white, whiteId, black, blackId, _chess) {
+        document.getElementById("modelThatIsWhite").innerHTML = white;
+        this.chess = _chess;
         this.chess.reset();
         board = Chessboard('board', this.chess.fen());
 
         let modelToMakeAMove = 0;
-        return await this.makeAMove(model0, modelId0, model1, modelId1, modelToMakeAMove, []).then(r => r)
+        return await this.makeAMove(white, whiteId, black, blackId, modelToMakeAMove, []).then(r => r)
     }
 
-    async makeAMove(model0, modelId0, model1, modelId1, modelToMove, history, oneMoveAgo, twoMovesAgo, threeMovesAgo, fourMovesAgo, fiveMovesAgo) {
+    async makeAMove(model0, modelId0, model1, modelId1, modelToMove, history, oneMoveAgo, twoMovesAgo) {
         if (this.chess.game_over()) {
-            Chessboard('board7', {
+            Chessboard('board4', {
                 position: this.chess.fen(),
                 showNotation: false
             });
-
-            Chessboard('board6', {
+            Chessboard('board3', {
                 position: oneMoveAgo,
                 showNotation: false
             });
-            Chessboard('board5', {
+            Chessboard('board2', {
                 position: twoMovesAgo,
                 showNotation: false
             });
-            Chessboard('board4', {
-                position: threeMovesAgo,
-                showNotation: false
-            });
-            Chessboard('board3', {
-                position: fourMovesAgo,
-                showNotation: false
-            });
-            Chessboard('board2', {
-                position: fiveMovesAgo,
-                showNotation: false
-            });
-            console.log(oneMoveAgo);
-            console.log(twoMovesAgo);
             if (game.in_checkmate) {
                 return modelToMove;
             } else {
@@ -290,9 +298,6 @@ class NeuralNetworkTrainer {
                 if (move.indexOf("p") != -1 || move.indexOf("P") != -1) {
                     history = [];
                 }
-                fiveMovesAgo = oneMoveAgo;
-                fourMovesAgo = oneMoveAgo;
-                threeMovesAgo = oneMoveAgo;
                 twoMovesAgo = oneMoveAgo;
                 oneMoveAgo = this.chess.fen();
                 this.chess.move(move);
@@ -318,7 +323,7 @@ class NeuralNetworkTrainer {
             await this.timeout(100).then(r => r);
 
             if (this.keepTraining) {
-                return this.makeAMove(model0, modelId0, model1, modelId1, modelToMove, history, oneMoveAgo, twoMovesAgo, threeMovesAgo, fourMovesAgo, fiveMovesAgo)
+                return this.makeAMove(model0, modelId0, model1, modelId1, modelToMove, history, oneMoveAgo, twoMovesAgo)
             } else {
                 return 3;
             }
@@ -330,31 +335,37 @@ class NeuralNetworkTrainer {
     }
 
     async testIfWinnerIsAssignedPointsCorrectly() {
-        let id1 = 2;
-        let id2 = 1;
+        let id0 = 2;
+        let id1 = 1;
+        let white = id0;
+        let model0 = this.models[id0];
         let model1 = this.models[id1];
-        let model2 = this.models[id2];
         board = Chessboard('board', this.chess.fen());
 
         this.chess.load("QQQBkNKB/PPPNN1QB/PPPPRBPP/PPPRRRPP/PPPPPPPP/PPPPPPPP/PPPPPPPP/RNBQRBNR w - - 0 1");
 
-        let results = await this.playTestMatch(model1, model2, this.chess).then(r => r);
-        await this.testResults(results, model1, model2, id1, id2).then(r => r);
+        let results = await this.playTestMatch(model0, model1, id0, id1, this.chess, white).then(r => r);
+        await this.testResults(results, model0, model1, id0, id1, white).then(r => r);
     }
 
-    async testResults(r, model1, model2, id1, id2) {
-        let white = 0;
-        for (let i = 0; i < this.models.length; i++) {
-            this.updateModelScore(i).score = 0;
+    async playTestMatch(model0, model1, id0, id1, _chess, white) {
+        return await this.makeAMove(model0, id0, model1, id1, white, new Array(), ).then(r => r);
+        //model0, modelId0, model1, modelId1, modelToMove, history, oneMoveAgo, twoMovesAgo
+    }
+
+    async testResults(r, model1, model2, id0, id1, white) {
+        let nextToMakeMove = r;
+        if (white == id0 && nextToMakeMove == 1 || white == id1 && nextToMakeMove == 0) {
+            this.updateModelScore(id0, 1)
+            this.updateModelScore(id1, -1)
+        } else {
+            this.updateModelScore(id0, -1)
+            this.updateModelScore(id1, 1)
         }
-        this.updateScores(id1, id2, r, white);
+        this.updateScores(id0, id1, r, white);
+        console.log("next to make a move: " + nextToMakeMove);
         console.log("id for white: " + white);
-        console.log("scores are: [" + id1 + "] " + this.getModelScore(id1) + ",  [" + id2 + "] " + this.getModelScore(id2))
-    }
-
-    async playTestMatch(model0, model1, _chess) {
-        let modelToMakeAMove = 0;
-        return await this.makeAMove(model0, model1, modelToMakeAMove).then(r => r)
+        console.log("scores are: [" + id0 + "] " + this.getModelScore(id0) + ",  [" + id1 + "] " + this.getModelScore(id1))
     }
 
     getModelScore(modelId) {
@@ -364,15 +375,6 @@ class NeuralNetworkTrainer {
             }
         }
         return -1;
-    }
-
-
-    async monteCarloSpeedTester() {
-        let startTime = new Date().getTime();
-        this.chess.move(monteCarlo.getBestMove(this.models[5].model, this.chess));
-        let timeDifference = new Date().getTime() - startTime;
-        board = Chessboard('board', this.chess.fen());
-        console.log(timeDifference);
     }
 }
 

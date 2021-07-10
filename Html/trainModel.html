@@ -37,6 +37,7 @@
         
         h5 {
             white-space: nowrap;
+            width: 100%;
         }
     </style>
 </head>
@@ -48,23 +49,20 @@
                 <div id="board" style="width: 400px"></div>
 
             </div>
-            <div class="col">
-                <div id="moveMade">X</div>
+            <div class="col" id="moveMade">
+                <div>X</div>
             </div>
             <div class="col">
                 <h5>Scores so far:</h5><br>
                 <div id="tournamentScores"></div>
-                <h5>Match number:</h5><br> <span id="matchNumber"></span>
+                <h5>Match number: <span id="matchNumber"></span></h5>
             </div>
             <div class="col">
                 <div id="board2" class="historyBoard" style="width: 200px"></div>
                 <div id="board3" class="historyBoard" style="width: 200px"></div>
                 <div id="board4" class="historyBoard" style="width: 200px"></div>
-                <div id="board5" class="historyBoard" style="width: 200px"></div>
-                <div id="board6" class="historyBoard" style="width: 200px"></div>
-                <div id="board7" class="historyBoard" style="width: 200px"></div>
                 <br>
-                <h5>Model that is white:</h5> <span id="modelThatIsWhite"></span>
+                <h5>Model that is white: <span id="modelThatIsWhite"></span></h5>
             </div>
         </div>
         <div class="row">
@@ -80,12 +78,12 @@
             <button class="btn btn-secondary" id="loadModel">Load Models</button>
 
             <button class="btn btn-secondary" id="playBestMove">Play best Move</button>
+
             <button class="btn btn-secondary" id="predictBestMove">Predict best move</button>
 
 
             <button class="btn btn-secondary" id="updateBoard">Update Board</button>
 
-            <button class="btn btn-secondary" id="testMonteSpeed">Test Monte Speed</button>
         </div>
         <div class="row">
             <input type="text" id="saveModelName" placeholder="Save as">
@@ -136,9 +134,6 @@
         async function changeGoal(goal) {
             NNTrainer.trainingGoal = goal;
         }
-        document.getElementById("testMonteSpeed").addEventListener("click", () => {
-            NNTrainer.monteCarloSpeedTester();
-        });
         document.getElementById("saveModelToDownloads").addEventListener("click", async() => {
             if (NNTrainer.models[0].model != null) {
                 NNTrainer.saveModelToDownloads(document.getElementById("saveModelName").value);
@@ -166,16 +161,6 @@
         let board4 = Chessboard('board4', {
             showNotation: false
         });
-        let board5 = Chessboard('board5', {
-            showNotation: false
-        });
-        let board6 = Chessboard('board6', {
-            showNotation: false
-        });
-        let board7 = Chessboard('board7', {
-            showNotation: false
-        });
-
 
         document.getElementById("CreateNewModels").addEventListener("click", async() => {
             for (let i = 0; i < 10; i++) {
