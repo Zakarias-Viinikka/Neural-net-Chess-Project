@@ -235,7 +235,7 @@ class NeuralNetworkTrainer {
 
     async makeAMove(model0, modelId0, model1, modelId1, modelToMove, history) {
         if (this.chess.game_over()) {
-            board2 = Chessboard('board', this.chess.fen());
+            board2 = Chessboard('board2', this.chess.fen());
             if (game.in_checkmate) {
                 return modelToMove;
             } else {
