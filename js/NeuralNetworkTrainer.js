@@ -2,10 +2,9 @@ class NeuralNetworkTrainer {
     constructor(chess) {
         this.models = [];
         this.keepTraining = true;
-        this.rate = 0.01;
+        this.rate = 1; //in percentages %
         this.modelScores = [];
         this.chess = chess;
-        this.trainingGoal = "win";
 
         if (localStorage.getItem("matchesPlayed") == null) {
             localStorage.setItem("matchesPlayed", "0");
@@ -85,10 +84,27 @@ class NeuralNetworkTrainer {
         }
     }
 
+    async saveModelToDownloads(modelName) {
+        const saveResult = await this.models[0].model.save('downloads://' + modelName);
+    }
+
+    async loadFromDownloads(modelName) {
+        for (let i = 0; i < 10; i++) {
+            let modelPath = 'http://localhost/models/' + modelName + ".json";
+            await this.models.push(new NeuralNet(modelPath))
+        }
+    }
+
+    async loadTheModels() {
+        for (let i = 0; i < 10; i++) {
+            let modelPath = 'indexeddb://model' + i;
+            await this.models.push(new NeuralNet(modelPath))
+        }
+    }
+
     resetModelScores() {
         for (let i = 0; i < this.modelScores.length; i++) {
             this.modelScores[i].score = 0;
-            this.modelScores[i].eatenPieces = 0;
         }
     }
 
@@ -173,7 +189,7 @@ class NeuralNetworkTrainer {
             if (game.in_checkmate) {
                 return modelToMove;
             } else {
-                return 2;
+                return (modelToMove + 1) % 2;
             }
         } else {
             let move = "";
@@ -194,30 +210,28 @@ class NeuralNetworkTrainer {
             move = await monteCarlo.getBestMove(currentModel.model, monteChess, history).then(r => r);
 
             (async() => {
-                if (move.indexOf("x") != -1) {
-                    this.modelScores[modelId].eatenPieces++;
-                    this.modelScores[opponentModelId].eatenPieces--;
+                if (move.indexOf("p") != -1 || move.indexOf("P") != -1) {
+                    history = [];
                 }
                 this.chess.move(move);
 
-                let justBoardStateFen = "";
+                let justBoardStateAsFenString = "";
                 let ctr = 0;
                 while (true) {
                     let fenCharacter = this.chess.fen().charAt(ctr);
                     if (fenCharacter == " ") {
                         break;
                     }
-                    justBoardStateFen += fenCharacter;
+                    justBoardStateAsFenString += fenCharacter;
                     ctr++;
                 }
 
-                history.push(justBoardStateFen);
+                history.push(justBoardStateAsFenString);
                 board = Chessboard('board', this.chess.fen());
                 document.getElementById("moveMade").innerHTML = move;
             })();
 
-            modelToMove++;
-            modelToMove = modelToMove % 2;
+            modelToMove = (modelToMove + 1) % 2;
 
             await this.timeout(100).then(r => r);
 
@@ -291,6 +305,5 @@ class ModelScore {
     constructor(modelId) {
         this.modelId = modelId;
         this.score = 0;
-        this.eatenPieces = 0;
     }
 }

@@ -39,20 +39,9 @@ class monteCarloTreeSearch {
             chess.move(move);
             let moveEvaluation = await this.evaluateMove(chess, this.history, move, false);
             let newBoardPosition = this.chess.fen();
-            if (await this.matchEndsInRepetition(allPossibleMoves.length, removedMoves) == false) {
-                this.treeBranchRoots.push(new treeBranchRoot(move, moveEvaluation, this, newBoardPosition));
-            }
+            this.treeBranchRoots.push(new treeBranchRoot(move, moveEvaluation, this, newBoardPosition));
             this.chess.load(this.originalPosition);
         }
-    }
-
-    async matchEndsInRepetition(amountOfMoves, removedMoves) {
-        if (amountOfMoves - removedMoves > 1) {
-            if (this.drawState == 1) {
-                return true;
-            }
-        }
-        return false;
     }
     async treeSearch() {
         for (let i = 0; i < this.depth; i++) {

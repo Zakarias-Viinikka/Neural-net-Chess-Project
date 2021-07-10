@@ -26,6 +26,10 @@
         button {
             margin: 2px;
         }
+        
+        input {
+            margin: 2px;
+        }
     </style>
 </head>
 
@@ -37,15 +41,15 @@
         </div>
         <div class="row">
             Depth:
-            <span id="depthSpan">1</span><br>
+            <span id="depthSpan">0</span><br>
         </div>
         <div class="row">
-            <input id="depthSlider" type="range" min="1" max="25" value="0">
+            <input id="depthSlider" type="range" min="0" max="100" value="0">
         </div>
         <div class="row">
             <button class="btn btn-secondary" id="startTheTraining">Start Training</button>
             <button class="btn btn-secondary" id="CreateNewModels">Create new Models</button>
-            <button class="btn btn-secondary" id="loadModel">Load Models (Have to create models first and it will load onto them)</button>
+            <button class="btn btn-secondary" id="loadModel">Load Models</button>
 
             <button class="btn btn-secondary" id="playBestMove">Play best Move</button>
             <button class="btn btn-secondary" id="predictBestMove">Predict best move</button>
@@ -54,8 +58,14 @@
             <button class="btn btn-secondary" id="updateBoard">Update Board</button>
 
             <button class="btn btn-secondary" id="testMonteSpeed">Test Monte Speed</button>
-            <button class="btn btn-secondary" id="setGoalWin">Set Training Goal to Win</button>
-            <button class="btn btn-secondary" id="setGoalEat">Set Training Goal to Eat Pieces</button>
+        </div>
+        <div class="row">
+            <input type="text" id="saveModelName" placeholder="Save as">
+            <button class="btn btn-secondary" id="saveModelToDownloads">Save Model to Downloads</button>
+        </div>
+        <div class="row">
+            <input type="text" id="loadModelName" placeholder="Download name">
+            <button class="btn btn-secondary" id="loadFromDownloads">Load Model from Downloads</button>
         </div>
     </div>
 
@@ -78,20 +88,27 @@
     <script src="../js/NeuralNetworkTrainer.js"></script>
     <script src="../js/monteCarloTreeSearch.js"></script>
     <script>
-        document.getElementById("setGoalWin").addEventListener("click", async() => {
-            await changeGoal("win");
-            console.log("training goal: " + NNTrainer.trainingGoal);
-        });
-        document.getElementById("setGoalEat").addEventListener("click", async() => {
-            await changeGoal("eat");
-            console.log("training goal: " + NNTrainer.trainingGoal);
-        });
         async function changeGoal(goal) {
             NNTrainer.trainingGoal = goal;
+        }
+        let depth = localStorage.getItem("treeSearchDepth");
+        if (depth == null) {
+            localStorage.setItem("treeSearchDepth", 0);
         }
         let depth = document.getElementById("depthSlider").value;
         document.getElementById("testMonteSpeed").addEventListener("click", () => {
             NNTrainer.monteCarloSpeedTester();
+        });
+        document.getElementById("saveModelToDownloads").addEventListener("click", async() => {
+            if (NNTrainer.models[0].model != null) {
+                NNTrainer.saveModelToDownloads(document.getElementById("saveModelName").value);
+            } else {
+                console.log("model doesn't exist. save failed.")
+            }
+        });
+        document.getElementById("loadFromDownloads").addEventListener("click", async() => {
+            await NNTrainer.loadFromDownloads(document.getElementById("loadModelName").value);
+            console.log("loaded model from downloads and saved it.");
         });
 
         let NNTrainer = new NeuralNetworkTrainer(new Chess());
@@ -103,6 +120,7 @@
 
         document.getElementById("CreateNewModels").addEventListener("click", async() => {
             let models = await CreateNewModels().then(r => r);
+            //console.log(models)
             for (let i = 0; i < models.length; i++) {
                 await NNTrainer.addModelToTrainer(models[i]).then(r => null);
             }
@@ -112,11 +130,12 @@
         });
 
         async function mutateModels() {
-            for (let j = 0; j < 10; j++) {
+            for (let j = 0; j < 100; j++) {
                 for (let index = 0; index < NNTrainer.models.length; index++) {
-                    NNTrainer.models[0].extremeMutate(0.5);
+                    await NNTrainer.models[index].extremeMutate(0.5);
                 }
             }
+            console.log("created new models");
         }
 
         document.getElementById("startTheTraining").addEventListener("click", async() => {
@@ -168,18 +187,14 @@
         slider.oninput = function() {
             depthSpan.innerHTML = this.value;
             monteCarlo.depth = this.value;
+            localStorage.setItem("treeSearchDepth", this.value);
         }
 
         document.getElementById("loadModel").addEventListener("click", async() => {
-            await loadTheModels().then(r => console.log("loaded models"));
+            await NNTrainer.loadTheModels().then(r => console.log("loaded models"));
             await showProofOfLoadedModels().then(r => r)
         })
 
-        async function loadTheModels() {
-            for (let i = 0; i < 10; i++) {
-                NNTrainer.models[i].model = await tf.loadLayersModel('indexeddb://model' + i)
-            }
-        }
 
         async function showProofOfLoadedModels() {
             NNTrainer.models[0].model.getWeights()[0].print();
