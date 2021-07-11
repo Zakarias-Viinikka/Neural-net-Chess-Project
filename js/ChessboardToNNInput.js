@@ -129,7 +129,5 @@ async function ChessboardToNNInput(chessboard, opponentTurn, history) {
     }
     chessboardAsArray.push(repetitions);
 
-
-    console.log(repetitions);
     return chessboardAsArray;
 }

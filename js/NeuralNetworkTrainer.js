@@ -2,7 +2,7 @@ class NeuralNetworkTrainer {
     constructor(chess) {
         this.models = [];
         this.keepTraining = true;
-        this.rate = 5; //in percentages %
+        this.rate = parseInt(localStorage.getItem("mutationRate")); //in percentages %
         this.modelScores = [];
         this.chess = chess;
         this.matchesPlayed = 0;
