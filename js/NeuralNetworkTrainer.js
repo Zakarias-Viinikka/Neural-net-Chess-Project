@@ -263,7 +263,11 @@ class NeuralNetworkTrainer {
         return await this.makeAMove(white, whiteId, black, blackId, modelToMakeAMove, []).then(r => r)
     }
 
-    async makeAMove(model0, modelId0, model1, modelId1, modelToMove, history, oneMoveAgo, twoMovesAgo) {
+    async makeAMove(model0, modelId0, model1, modelId1, modelToMove, history, oneMoveAgo, twoMovesAgo, moveCtr) {
+        if (moveCtr == null) {
+            moveCtr = 0;
+        }
+        moveCtr++
         let justBoardStateFen = "";
         let ctr = 0;
         while (true) {
@@ -284,10 +288,19 @@ class NeuralNetworkTrainer {
         if (this.chess.game_over()) {
             this.updateLastGameBoard(this.chess.fen(), oneMoveAgo, twoMovesAgo);
             if (this.chess.in_checkmate()) {
+                console.log("checkmate");
                 return modelToMove;
-            } else if (this.chess.in_threefold_repetition()) {
+            } else if (this.chess.in_threefold_repetition() || history == 1.5) {
+                if (this.chess.in_threefold_repetition() == false) {
+                    console.log("logic error");
+                    console.log("repetition: " + this.chess.in_threefold_repetition());
+                    console.log("draw: " + this.chess.in_draw());
+                    console.log("history", history);
+                }
                 console.log("repetition");
                 return (modelToMove + 1) % 2;
+            } else {
+                console.log("acceptable draw");
             }
         } else {
             let move = "";
@@ -327,10 +340,12 @@ class NeuralNetworkTrainer {
 
             modelToMove = (modelToMove + 1) % 2;
 
-            await this.timeout(100).then(r => r);
+            if (moveCtr % 20 == 0) {
+                await this.timeout(50).then(r => r);
+            }
 
             if (this.keepTraining) {
-                return this.makeAMove(model0, modelId0, model1, modelId1, modelToMove, history, oneMoveAgo, twoMovesAgo)
+                return this.makeAMove(model0, modelId0, model1, modelId1, modelToMove, history, oneMoveAgo, twoMovesAgo, moveCtr)
             } else {
                 return 3;
             }
