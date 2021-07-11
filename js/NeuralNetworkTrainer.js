@@ -2,7 +2,7 @@ class NeuralNetworkTrainer {
     constructor(chess) {
         this.models = [];
         this.keepTraining = true;
-        this.rate = 1; //in percentages %
+        this.rate = 5; //in percentages %
         this.modelScores = [];
         this.chess = chess;
         this.matchesPlayed = 0;
@@ -38,11 +38,12 @@ class NeuralNetworkTrainer {
         console.log("All matches concluded");
         console.log("memory: " + tf.memory().numTensors)
 
-        await this.saveModels().then(r => r);
-        this.resetModelScores();
-        await this.evolution().then(r => r);
 
         if (this.keepTraining) {
+            this.updateFinishedTrainingLogs()
+            await this.saveModels().then(r => r);
+            this.resetModelScores();
+            await this.evolution().then(r => r);
             await this.startTraining();
         }
     }
@@ -263,11 +264,29 @@ class NeuralNetworkTrainer {
     }
 
     async makeAMove(model0, modelId0, model1, modelId1, modelToMove, history, oneMoveAgo, twoMovesAgo) {
+        let justBoardStateFen = "";
+        let ctr = 0;
+        while (true) {
+            let fenCharacter = this.chess.fen().charAt(ctr);
+            if (fenCharacter == " ") {
+                break;
+            }
+            justBoardStateFen += fenCharacter;
+            ctr++;
+        }
+        let repetitionDraw = 0;
+        for (let i = 0; i < history.length; i++) {
+            if (history[i] == justBoardStateFen) {
+                repetitionDraw += 0.5;
+            }
+        }
+
         if (this.chess.game_over()) {
             this.updateLastGameBoard(this.chess.fen(), oneMoveAgo, twoMovesAgo);
-            if (game.in_checkmate) {
+            if (this.chess.in_checkmate()) {
                 return modelToMove;
-            } else {
+            } else if (this.chess.in_threefold_repetition()) {
+                console.log("repetition");
                 return (modelToMove + 1) % 2;
             }
         } else {
@@ -283,12 +302,12 @@ class NeuralNetworkTrainer {
             move = await monteCarlo.getBestMove(currentModel.model, monteChess, history).then(r => r);
 
             (async() => {
-                if (move.indexOf("p") != -1 || move.indexOf("P") != -1) {
-                    history = [];
-                }
                 twoMovesAgo = oneMoveAgo;
                 oneMoveAgo = this.chess.fen();
                 this.chess.move(move);
+                if (move.indexOf("p") != -1 || move.indexOf("P") != -1 || move.indexOf("x") != -1) {
+                    history = [];
+                }
 
                 let justBoardStateAsFenString = "";
                 let ctr = 0;

@@ -1,4 +1,4 @@
-async function ChessboardToNNInput(chessboard, history, currentMove, opponentTurn) {
+async function ChessboardToNNInput(chessboard, opponentTurn, history) {
     let boardAs2DArray = chessboard.board();
     let chessboardAsArray = [];
     this.getPieceValue = function(type, color) {
@@ -128,5 +128,8 @@ async function ChessboardToNNInput(chessboard, history, currentMove, opponentTur
         }
     }
     chessboardAsArray.push(repetitions);
+
+
+    console.log(repetitions);
     return chessboardAsArray;
 }
