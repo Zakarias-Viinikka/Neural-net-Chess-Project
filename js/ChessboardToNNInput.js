@@ -1,4 +1,4 @@
-async function ChessboardToNNInput(chessboard, opponentTurn, history) {
+async function ChessboardToNNInput(chessboard, history) {
     let boardAs2DArray = chessboard.board();
     let chessboardAsArray = [];
     this.getPieceValue = function(type, color) {
@@ -85,12 +85,6 @@ async function ChessboardToNNInput(chessboard, opponentTurn, history) {
         chessboardAsArray.push(0);
     }
     if (lastPartOfFEN.indexOf("q") != -1) {
-        chessboardAsArray.push(1);
-    } else {
-        chessboardAsArray.push(0);
-    }
-
-    if (opponentTurn != null && opponentTurn) {
         chessboardAsArray.push(1);
     } else {
         chessboardAsArray.push(0);

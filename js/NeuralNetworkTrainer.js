@@ -153,7 +153,7 @@ class NeuralNetworkTrainer {
 
     async createModel(modelSavePath) {
         if (modelSavePath == null) {
-            const inputLayer = tf.layers.dense({ inputShape: 72, units: 10, activation: 'relu' });
+            const inputLayer = tf.layers.dense({ inputShape: 71, units: 10, activation: 'relu' });
             const hiddenLayer1 = tf.layers.dense({ units: 72, activation: 'relu' });
             const hiddenLayer2 = tf.layers.dense({ units: 50, activation: 'relu' });
             const hiddenLayer3 = tf.layers.dense({ units: 25, activation: 'relu' });
@@ -228,7 +228,6 @@ class NeuralNetworkTrainer {
         } else if (this.trainingGoal = "eat") {
 
         }
-
 
 
         this.models[9].model.getWeights()[0].print();
