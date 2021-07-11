@@ -6,6 +6,7 @@ class NeuralNetworkTrainer {
         this.modelScores = [];
         this.chess = chess;
         this.matchesPlayed = 0;
+        this.showMoves = localStorage.getItem("showMoves");
 
         if (localStorage.getItem("matchesPlayed") == null) {
             localStorage.setItem("matchesPlayed", "0");
@@ -128,6 +129,7 @@ class NeuralNetworkTrainer {
     }
 
     async loadFromFiles(modelName) {
+        NNTrainer.models = [];
         for (let i = 0; i < 10; i++) {
             let modelPath = 'http://localhost/models/' + modelName + ".json";
             await this.addModelToTrainer(modelPath);
@@ -136,6 +138,7 @@ class NeuralNetworkTrainer {
     }
 
     async loadModels() {
+        NNTrainer.models = [];
         for (let i = 0; i < 10; i++) {
             let modelPath = 'indexeddb://model' + i;
             await this.addModelToTrainer(modelPath);
@@ -340,7 +343,9 @@ class NeuralNetworkTrainer {
 
             modelToMove = (modelToMove + 1) % 2;
 
-            if (moveCtr % 20 == 0) {
+            if (this.showMoves == "true") {
+                await this.timeout(100).then(r => r);
+            } else if (moveCtr % 20 == 0) {
                 await this.timeout(50).then(r => r);
             }
 

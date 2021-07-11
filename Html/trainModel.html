@@ -94,15 +94,7 @@
             <button class="btn btn-secondary" id="startTheTraining">Start Training</button>
             <button class="btn btn-secondary" id="CreateNewModels">Create new Models</button>
             <button class="btn btn-secondary" id="loadModel">Load Models</button>
-
-            <button class="btn btn-secondary" id="playBestMove">Play best Move</button>
-
-            <button class="btn btn-secondary" id="predictBestMove">Predict best move</button>
-
-
-            <button class="btn btn-secondary" id="updateBoard">Update Board</button>
-            <button class="btn btn-secondary" id="play1MoveOnly">Update Board</button>
-
+            <button class="btn btn-secondary" id="showMoves">Show Moves</button>
         </div>
         <div class="row">
             <input type="text" id="saveModelName" placeholder="Save as">
@@ -180,9 +172,30 @@
             console.log("loaded model from downloads and saved it.");
         });
 
-        let NNTrainer = new NeuralNetworkTrainer(new Chess());
+
+        if (localStorage.getItem("showMoves") == null) {
+            console.log("null")
+        }
+        if (localStorage.getItem("showMoves") == "false") {
+            document.getElementById("showMoves").innerHTML = "Show Moves";
+        } else {
+            document.getElementById("showMoves").innerHTML = "Increase speed by like 5%";
+        }
+
+        document.getElementById("showMoves").addEventListener("click", () => {
+            NNTrainer.showMoves = localStorage.getItem("showMoves");
+            if (document.getElementById("showMoves").innerHTML == "Show Moves") {
+                document.getElementById("showMoves").innerHTML = "Increase speed by like 5%";
+                localStorage.setItem("showMoves", "false");
+            } else {
+                document.getElementById("showMoves").innerHTML = "Show Moves";
+                localStorage.setItem("showMoves", "true");
+            }
+        });
+
 
         let monteCarlo = new monteCarloTreeSearch(new Chess(), depth);
+        let NNTrainer = new NeuralNetworkTrainer(new Chess());
 
         var game = new Chess();
         let board = Chessboard('board', 'start');
@@ -222,7 +235,7 @@
 
             await NNTrainer.timeout(500);
 
-            if (NNTrainer != null) {
+            if (NNTrainer.models.length != 0) {
                 if (btn.innerHTML == "Pause Training") {
                     NNTrainer.startTraining();
                 } else {
@@ -230,75 +243,6 @@
                 }
             }
         })
-
-        let testModelId0 = 0;
-        let testModelId1 = 1;
-
-        document.getElementById("play1MoveOnly").addEventListener("click",
-            async() => {
-                modelId = i;
-                opponentModelId = this.models.length - i - 1;
-                if (Math.floor(Math.random() * 2) == 0) {
-                    whiteId = modelId;
-                    blackId = opponentModelId;
-                } else {
-                    whiteId = opponentModelId;
-                    blackId = modelId;
-                }
-                if (whiteId == modelId) {
-                    await this.playMatch(this.models[modelId], modelId, this.models[opponentModelId], opponentModelId, this.chess).then(r => loser = r)
-                    if (loser == 0) {
-                        loser = modelId;
-                    } else if (loser == 1) {
-                        loser = opponentModelId;
-                    } else {
-                        loser = "draw";
-                    }
-                    this.updateScores(whiteId, blackId, loser)
-                } else {
-                    await this.playMatch(this.models[opponentModelId], opponentModelId, this.models[modelId], modelId, this.chess).then(r => loser = r)
-                    if (loser == 1) {
-                        loser = modelId;
-                    } else if (loser == 0) {
-                        loser = opponentModelId;
-                    } else {
-                        loser = "draw";
-                    }
-                    this.updateScores(whiteId, blackId, loser)
-                }
-
-            })
-        document.getElementById("playBestMove").addEventListener("click", () => {
-            NNTrainer.chess.move(bestMove);
-
-
-            moveTurn = (moveTurn + 1) % 2;
-            board = Chessboard('board', NNTrainer.chess.fen());
-        });
-
-        let bestMove = "";
-        let predictBestMoveHistory = [];
-        let moveTurn = 0;
-        document.getElementById("predictBestMove").addEventListener("click", async() => {
-            //(model, chess, history)
-            let monteChess = new Chess();
-            monteChess.load(NNTrainer.chess.fen());
-            bestMove = await monteCarlo.getBestMove(NNTrainer.models[0].model, monteChess, predictBestMoveHistory);
-            console.log(bestMove);
-            while (true) {
-                let fenCharacter = NNTrainer.chess.fen().charAt(ctr);
-                if (fenCharacter == " ") {
-                    break;
-                }
-                justBoardStateAsFenString += fenCharacter;
-                ctr++;
-            }
-            predictBestMoveHistory.push(justBoardStateAsFenString);
-        });
-
-        document.getElementById("updateBoard").addEventListener("click", () => {
-            board = Chessboard('board', NNTrainer.chess.fen());
-        });
 
         document.getElementById("loadModel").addEventListener("click", async() => {
             await NNTrainer.loadModels().then(r => NNTrainer.models[0].model.getWeights()[0].print());
