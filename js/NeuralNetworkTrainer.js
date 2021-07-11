@@ -330,7 +330,7 @@ class NeuralNetworkTrainer {
                 if (move.indexOf("p") != -1 || move.indexOf("P") != -1 || move.indexOf("x") != -1) {
                     history = [];
                 }
-                this.rewardEatingPieces(move, model0, model1, modelToMove)
+                this.rewardEatingPieces(move, modelId0, modelId1, modelToMove);
                 let justBoardStateAsFenString = "";
                 let ctr = 0;
                 while (true) {
@@ -364,18 +364,20 @@ class NeuralNetworkTrainer {
     }
 
     rewardEatingPieces(move, model0Id, model1Id, modelToMove) {
-        let modelToReward = model0Id;
-        let modelToPunish = model1Id;
-        if (modelToMove == 0) {
-            modelToReward = model0Id;
-            modelToPunish = model1Id;
-        } else {
-            modelToReward = model1Id;
-            modelToPunish = model0Id;
-        }
+        if (move.indexOf("x") != -1) {
+            let modelToReward = model0Id;
+            let modelToPunish = model1Id;
+            if (modelToMove == 0) {
+                modelToReward = model0Id;
+                modelToPunish = model1Id;
+            } else {
+                modelToReward = model1Id;
+                modelToPunish = model0Id;
+            }
 
-        this.updateModelScore(modelToReward, 0.1)
-        this.updateModelScore(modelToPunish, -0.1)
+            this.updateModelScore(modelToReward, 0.1)
+            this.updateModelScore(modelToPunish, -0.1)
+        }
     }
 
     updateLastGameBoard(thisTurn, oneMoveAgo, twoMovesAgo) {

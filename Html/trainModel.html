@@ -174,7 +174,7 @@
 
 
         if (localStorage.getItem("showMoves") == null) {
-            console.log("null")
+            localStorage.setItem("showMoves", "true");
         }
         if (localStorage.getItem("showMoves") == "true") {
             document.getElementById("showMoves").innerHTML = "Show Moves";
