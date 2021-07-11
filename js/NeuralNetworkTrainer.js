@@ -130,6 +130,7 @@ class NeuralNetworkTrainer {
 
     async loadFromFiles(modelName) {
         NNTrainer.models = [];
+        NNTrainer.modelScores = [];
         for (let i = 0; i < 10; i++) {
             let modelPath = 'http://localhost/models/' + modelName + ".json";
             await this.addModelToTrainer(modelPath);
@@ -139,6 +140,7 @@ class NeuralNetworkTrainer {
 
     async loadModels() {
         NNTrainer.models = [];
+        NNTrainer.modelScores = [];
         for (let i = 0; i < 10; i++) {
             let modelPath = 'indexeddb://model' + i;
             await this.addModelToTrainer(modelPath);
