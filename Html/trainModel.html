@@ -176,21 +176,22 @@
         if (localStorage.getItem("showMoves") == null) {
             console.log("null")
         }
-        if (localStorage.getItem("showMoves") == "false") {
+        if (localStorage.getItem("showMoves") == "true") {
             document.getElementById("showMoves").innerHTML = "Show Moves";
         } else {
-            document.getElementById("showMoves").innerHTML = "Increase speed by like 5%";
+            document.getElementById("showMoves").innerHTML = "Increase speed";
         }
 
         document.getElementById("showMoves").addEventListener("click", () => {
             NNTrainer.showMoves = localStorage.getItem("showMoves");
             if (document.getElementById("showMoves").innerHTML == "Show Moves") {
-                document.getElementById("showMoves").innerHTML = "Increase speed by like 5%";
+                document.getElementById("showMoves").innerHTML = "Increase speed";
                 localStorage.setItem("showMoves", "false");
             } else {
                 document.getElementById("showMoves").innerHTML = "Show Moves";
                 localStorage.setItem("showMoves", "true");
             }
+            NNTrainer.showMoves = localStorage.getItem("showMoves")
         });
 
 

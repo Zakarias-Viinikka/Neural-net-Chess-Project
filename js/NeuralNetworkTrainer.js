@@ -50,6 +50,10 @@ class NeuralNetworkTrainer {
     }
 
     async tournament() {
+        if (!this.keepTraining) {
+            document.getElementById("tournamentScores").innerHTML = "";
+            this.matchesPlayed--;
+        }
         this.matchesPlayed++;
         document.getElementById("matchNumber").innerHTML = this.matchesPlayed;
         let modelId = 0;
