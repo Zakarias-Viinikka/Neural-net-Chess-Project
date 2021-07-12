@@ -64,7 +64,8 @@
                 <div id="board3" class="historyBoard" style="width: 200px"></div>
                 <div id="board4" class="historyBoard" style="width: 200px"></div>
                 <br>
-                <h5>Model that won: <span id="modelThatWon"></span>, and Color: <span id="modelThatWonColor"></span></h5>
+                <h5>Model that won: <span id="modelThatWon"></span>, Color: <span id="modelThatWonColor"></span>, Outcome <span id="matchOutcome"></span></h5>
+                <h5></h5>
                 <h5>Model that is currently white: <span id="modelThatIsWhite"></span></h5>
             </div>
         </div>
@@ -126,6 +127,8 @@
     <script src="../js/NeuralNetwork.js"></script>
     <script src="../js/NeuralNetworkTrainer.js"></script>
     <script src="../js/monteCarloTreeSearch.js"></script>
+    <script src="../js/playMatch.js"></script>
+    <script src="../js/timeout.js"></script>
     <script>
         if (localStorage.getItem("mutationRate") == null) {
             localStorage.setItem("mutationRate", "1");
@@ -154,7 +157,6 @@
 
         slider.oninput = function() {
             depthSpan.innerHTML = this.value;
-            monteCarlo.depth = this.value;
             localStorage.setItem("treeSearchDepth", this.value);
         }
         async function changeGoal(goal) {
@@ -234,7 +236,7 @@
                 btn.innerHTML = "Start Training";
             }
 
-            await NNTrainer.timeout(500);
+            await timeout(500);
 
             if (NNTrainer.models.length != 0) {
                 if (btn.innerHTML == "Pause Training") {

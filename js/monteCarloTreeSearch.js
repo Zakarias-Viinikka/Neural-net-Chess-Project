@@ -1,8 +1,6 @@
 class monteCarloTreeSearch {
-    constructor(chess, depth) {
-        this.chess = chess;
-        this.originalPosition = chess.fen();
-        this.depth = depth;
+    constructor() {
+        this.depth = localStorage.getItem("depth");
         this.model = "model";
         this.treeBranchRoots = [];
         this.history = [];
