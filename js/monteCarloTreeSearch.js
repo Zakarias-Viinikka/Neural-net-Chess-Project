@@ -18,7 +18,6 @@ class monteCarloTreeSearch {
         await this.createTreeBranchRoots().then(r => r);
         this.treeBranchRoots.sort(function(a, b) { return a.evaluation - b.evaluation });
 
-        console.log(this.treeBranchRoots);
         await this.treeSearch().then(r => r);
         let bestRoot = await this.getBestRoot().then(r => r);
         await this.resetStuff().then(r => r);
@@ -100,14 +99,14 @@ class treeBranchRoot {
 
     async analyzeBestMove() {
         if (this.treeBranches.length == 0) {
-            await this.createLeafPositions().then(r => r);
+            await this.createTreeBranchPositions().then(r => r);
             this.treeBranches.sort(function(a, b) { return a.evaluation - b.evaluation });
         } else {
-            await this.analyzeBestLeaf().then(r => r);
+            await this.analyzeBestTreeBranch().then(r => r);
         }
     }
 
-    async createLeafPositions() {
+    async createTreeBranchPositions() {
         let possibleMoves = this.monteCarlo.chess.moves();
         let chess = this.monteCarlo.chess;
         for (let i = 0; i < possibleMoves.length; i++) {
@@ -121,7 +120,7 @@ class treeBranchRoot {
         }
     }
 
-    async analyzeBestLeaf() {
+    async analyzeBestTreeBranch() {
         await this.treeBranches[this.treeBranches.length - 1].analyze().then(r => r);
     }
 
@@ -157,15 +156,15 @@ class treeBranch {
 
     async analyze() {
         if (this.treeBranches.length == 0) {
-            await this.createLeafPositions().then(r => r);
+            await this.createTreeBranchPositions();
             this.treeBranches.sort(function(a, b) { return a.evaluation - b.evaluation });
-            await this.updateEvaluations(this.evaluation).then(r => r);
+            await this.updateEvaluations(this.evaluation);
         } else {
-            await this.treeBranches[this.treeBranches.length - 1].analyze().then(r => r);
+            await this.treeBranches[this.treeBranches.length - 1].analyze();
         }
     }
 
-    async createLeafPositions() {
+    async createTreeBranchPositions() {
         let chess = this.monteCarlo.chess;
         let possibleMoves = chess.moves();
         for (let i = 0; i < possibleMoves.length; i++) {
@@ -185,9 +184,9 @@ class treeBranch {
 
         for (let i = this.treeBranches.length - 1; i > 0; i--) {
             let newEvaluation = this.treeBranches[i].evaluation;
-            if (newEvaluation < this.treeBranches[i - 1].evaluation) {
-                let tmp = this.treeBranches[i - 1].evaluation;
-                this.treeBranches[i - 1].evaluation = newEvaluation;
+            if (newEvaluation < this.treeBranches[this.treeBranches.length - 1].evaluation) {
+                let tmp = this.treeBranches[this.treeBranches.length - 1].evaluation;
+                this.treeBranches[this.treeBranches.length - 1].evaluation = newEvaluation;
                 this.treeBranches[i].evaluation = tmp;
             } else {
                 break;
@@ -195,6 +194,6 @@ class treeBranch {
         }
         this.treeBranches.sort(function(a, b) { return a.evaluation - b.evaluation });
 
-        await this.origin.updateEvaluations(evaluation).then(r => r);
+        await this.origin.updateEvaluations(evaluation);
     }
 }
