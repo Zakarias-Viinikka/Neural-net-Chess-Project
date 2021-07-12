@@ -17,6 +17,8 @@ class monteCarloTreeSearch {
 
         await this.createTreeBranchRoots().then(r => r);
         this.treeBranchRoots.sort(function(a, b) { return a.evaluation - b.evaluation });
+
+        console.log(this.treeBranchRoots);
         await this.treeSearch().then(r => r);
         let bestRoot = await this.getBestRoot().then(r => r);
         await this.resetStuff().then(r => r);

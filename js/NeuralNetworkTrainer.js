@@ -114,6 +114,8 @@ class NeuralNetworkTrainer {
             let matchesPlayed = parseInt(localStorage.getItem("matchesPlayed"));
             matchesPlayed++;
             localStorage.setItem("matchesPlayed", matchesPlayed);
+
+            this.chess.reset();
         }
     }
 
@@ -186,12 +188,23 @@ class NeuralNetworkTrainer {
 
     updateScores(white, black, loser) {
         if (loser != "draw") {
-            if (loser == black) {
-                this.updateModelScore(white, this.winningReward)
-                this.updateModelScore(black, -this.winningReward)
+            if (this.chess.in_checkmate()) {
+                if (loser == black) {
+                    this.updateModelScore(white, this.winningReward * 2)
+                    this.updateModelScore(black, -this.winningReward * 2)
+                } else {
+                    this.updateModelScore(white, -this.winningReward * 2)
+                    this.updateModelScore(black, this.winningReward * 2)
+                }
             } else {
-                this.updateModelScore(white, -this.winningReward)
-                this.updateModelScore(black, this.winningReward)
+                if (loser == black) {
+                    this.updateModelScore(white, this.winningReward)
+                    this.updateModelScore(black, -this.winningReward)
+                } else {
+                    this.updateModelScore(white, -this.winningReward)
+                    this.updateModelScore(black, this.winningReward)
+                }
+
             }
         }
     }
@@ -264,7 +277,6 @@ class NeuralNetworkTrainer {
     async playMatch(white, whiteId, black, blackId, _chess) {
         document.getElementById("modelThatIsWhite").innerHTML = whiteId;
         this.chess = _chess;
-        this.chess.reset();
         board = Chessboard('board', this.chess.fen());
 
         let modelToMakeAMove = 0;
