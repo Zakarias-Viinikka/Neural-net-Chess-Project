@@ -7,6 +7,7 @@ class NeuralNetworkTrainer {
         this.chess = chess;
         this.matchesPlayed = 0;
         this.showMoves = localStorage.getItem("showMoves");
+        this.winningReward = 1000;
 
         if (localStorage.getItem("matchesPlayed") == null) {
             localStorage.setItem("matchesPlayed", "0");
@@ -186,11 +187,11 @@ class NeuralNetworkTrainer {
     updateScores(white, black, loser) {
         if (loser != "draw") {
             if (loser == black) {
-                this.updateModelScore(white, 1000)
-                this.updateModelScore(black, -1000)
+                this.updateModelScore(white, this.winningReward)
+                this.updateModelScore(black, -this.winningReward)
             } else {
-                this.updateModelScore(white, -1000)
-                this.updateModelScore(black, 1000)
+                this.updateModelScore(white, -this.winningReward)
+                this.updateModelScore(black, this.winningReward)
             }
         }
     }
@@ -373,9 +374,10 @@ class NeuralNetworkTrainer {
                 modelToReward = model1Id;
                 modelToPunish = model0Id;
             }
-
-            this.updateModelScore(modelToReward, 1)
-            this.updateModelScore(modelToPunish, -1)
+            if (this.getModelScore(modelToReward) < this.winningReward) {
+                this.updateModelScore(modelToReward, 1)
+                this.updateModelScore(modelToPunish, -1)
+            }
         }
     }
 
@@ -391,8 +393,10 @@ class NeuralNetworkTrainer {
                 modelToReward = model0Id;
                 modelToPunish = model1Id;
             }
-            this.updateModelScore(modelToReward, 4);
-            this.updateModelScore(modelToPunish, -4);
+            if (this.getModelScore(modelToReward) < this.winningReward) {
+                this.updateModelScore(modelToReward, 4)
+                this.updateModelScore(modelToPunish, -4)
+            }
         }
     }
 
