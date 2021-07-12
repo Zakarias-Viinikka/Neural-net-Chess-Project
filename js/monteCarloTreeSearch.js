@@ -35,7 +35,7 @@ class monteCarloTreeSearch {
         for (let i = 0; i < allPossibleMoves.length; i++) {
             let move = allPossibleMoves[i];
             chess.move(move);
-            let moveEvaluation = await this.evaluateMove(chess, -1, this.history);
+            let moveEvaluation = await this.evaluateMove(chess, 1, this.history);
             let newBoardPosition = this.chess.fen();
             this.treeBranchRoots.push(new treeBranchRoot(move, moveEvaluation, this, newBoardPosition, this.history));
             chess.undo();
