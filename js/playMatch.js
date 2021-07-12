@@ -1,6 +1,6 @@
 class playMatch {
-    constructor(model0Id, model1Id, winningReward, _matchIndex, testingLogic, ) {
-        this.testingLogic = testingLogic;
+    constructor(model0Id, model1Id, winningReward, _matchIndex, showMoves) {
+        this.showMoves = showMoves;
         this.model0Reward = 0;
         this.model1Reward = 0;
         this.modelToMove = 0;
@@ -42,11 +42,12 @@ class playMatch {
         }
     }
     async start() {
-        if (this.testingLogic) {
-            document.getElementById("modelThatIsWhite").innerHTML = this.model0Id;
-            board = Chessboard('board', this.chess.fen());
-        }
+        document.getElementById("modelThatIsWhite").innerHTML = this.model0Id;
+        board = Chessboard('board', this.chess.fen());
+
         await this.makeAMoveUntillGameOver();
+
+        console.log(this.matchResults);
         return this.matchResults;
     }
 
@@ -102,10 +103,10 @@ class playMatch {
                 }
 
                 this.history.push(justBoardStateAsFenString);
-                if (this.testingLogic) {
-                    board = Chessboard('board', this.chess.fen());
-                    document.getElementById("moveMade").innerHTML = move;
-                }
+
+                board = Chessboard('board', this.chess.fen());
+                document.getElementById("moveMade").innerHTML = move;
+
             })();
 
             this.modelToMove = (this.modelToMove + 1) % 2;
@@ -154,7 +155,7 @@ class playMatch {
 
     updateLastGameBoard() {
         Chessboard('board4', {
-            position: this.thisTurn,
+            position: this.chess.fen(),
             showNotation: false
         });
         Chessboard('board3', {
@@ -171,7 +172,7 @@ class playMatch {
         let winner;
         let points;
         this.matchResults.white = this.model0Id;
-        (this.testingLogic ? this.updateLastGameBoard() : null);
+        this.updateLastGameBoard();
         if (this.chess.in_checkmate()) {
             winner = this.getModelNotToMoveId();
             this.matchResults.result = "checkmate";
@@ -190,10 +191,10 @@ class playMatch {
 
         if (this.model0Id == winner) {
             this.matchResults.model0Points += points;
-            this.matchResults.model0Points -= points;
+            this.matchResults.model1Points -= points;
         } else {
             this.matchResults.model0Points -= points;
-            this.matchResults.model0Points += points;
+            this.matchResults.model1Points += points;
 
         }
 
