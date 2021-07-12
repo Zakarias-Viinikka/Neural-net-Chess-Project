@@ -190,11 +190,11 @@ class NeuralNetworkTrainer {
         if (loser != "draw") {
             if (this.chess.in_checkmate()) {
                 if (loser == black) {
-                    this.updateModelScore(white, this.winningReward * 2)
-                    this.updateModelScore(black, -this.winningReward * 2)
+                    this.updateModelScore(white, this.winningReward * 5)
+                    this.updateModelScore(black, -this.winningReward * 5)
                 } else {
-                    this.updateModelScore(white, -this.winningReward * 2)
-                    this.updateModelScore(black, this.winningReward * 2)
+                    this.updateModelScore(white, -this.winningReward * 5)
+                    this.updateModelScore(black, this.winningReward * 5)
                 }
             } else {
                 if (loser == black) {
