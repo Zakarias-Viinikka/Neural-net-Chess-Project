@@ -1,5 +1,6 @@
 class NeuralNetworkTrainer {
     constructor(chess) {
+        this.startTime = new Date();
         this.models = [];
         this.keepTraining = true;
         this.rate = parseInt(localStorage.getItem("mutationRate")); //in percentages %
@@ -37,6 +38,8 @@ class NeuralNetworkTrainer {
 
         await this.tournament();
 
+        console.clear();
+        console.log("Started: " + this.startTime);
         console.log("All matches concluded");
 
         if (this.keepTraining) {
@@ -196,7 +199,7 @@ class NeuralNetworkTrainer {
                     this.updateModelScore(white, -this.winningReward * 5)
                     this.updateModelScore(black, this.winningReward * 5)
                 }
-            } else {
+            } else if (this.chess.in_threefold_repetition()) {
                 if (loser == black) {
                     this.updateModelScore(white, this.winningReward)
                     this.updateModelScore(black, -this.winningReward)
@@ -204,7 +207,9 @@ class NeuralNetworkTrainer {
                     this.updateModelScore(white, -this.winningReward)
                     this.updateModelScore(black, this.winningReward)
                 }
-
+            } else {
+                this.updateModelScore(white, this.winningReward)
+                this.updateModelScore(black, this.winningReward)
             }
         }
     }
