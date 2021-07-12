@@ -13,6 +13,7 @@ class NeuralNetworkTrainer {
         this.amountOfMatches = 0;
         this.amountOfModels = 2;
 
+        this.disableDOMS = true;
         if (localStorage.getItem("matchesPlayed") == null) {
             localStorage.setItem("matchesPlayed", "0");
         }
@@ -43,8 +44,9 @@ class NeuralNetworkTrainer {
 
     async matchFinished() {
         this.chess.reset();
-        document.getElementById("matchNumber").innerHTML = this.matchesPlayed;
-
+        if (!this.disableDOMS) {
+            document.getElementById("matchNumber").innerHTML = this.matchesPlayed;
+        }
         if (this.keepTraining) {
             this.updateFinishedTrainingLogs()
             await this.saveModels().then(r => r);
@@ -56,10 +58,14 @@ class NeuralNetworkTrainer {
 
     async tournament() {
         if (!this.keepTraining) {
-            document.getElementById("tournamentScores").innerHTML = "";
+            if (!this.disableDOMS) {
+                document.getElementById("tournamentScores").innerHTML = "";
+            }
             this.matchesPlayed--;
         }
-        document.getElementById("matchNumber").innerHTML = this.matchesPlayed;
+        if (!this.disableDOMS) {
+            document.getElementById("matchNumber").innerHTML = this.matchesPlayed;
+        }
         let modelId = 0;
         let opponentModelId = 1;
         let matchPlayers = [];
@@ -69,7 +75,7 @@ class NeuralNetworkTrainer {
             if (this.keepTraining) {
                 modelId = i;
                 opponentModelId = this.models.length - i - 1;
-                matchPlayers[i] = new playMatch(modelId, opponentModelId, this.winningReward, i, this.showMoves);
+                matchPlayers[i] = new playMatch(modelId, opponentModelId, this.winningReward, i, this.showMoves, this.disableDOMS);
                 let results;
 
                 await matchPlayers[i].start().then(r => results = r);
@@ -78,14 +84,18 @@ class NeuralNetworkTrainer {
 
                 //update visually scores so far
                 if (this.keepTraining) {
-                    document.getElementById("modelThatWon").innerHTML = results.winner;
-                    document.getElementById("modelThatWonColor").innerHTML = results.white;
-                    document.getElementById("matchOutcome").innerHTML = results.result;
-                    document.getElementById("tournamentScores").innerHTML = "";
+                    if (!this.disableDOMS) {
+                        document.getElementById("modelThatWon").innerHTML = results.winner;
+                        document.getElementById("modelThatWonColor").innerHTML = results.white;
+                        document.getElementById("matchOutcome").innerHTML = results.result;
+                        document.getElementById("tournamentScores").innerHTML = "";
+                    }
                 }
                 for (let j = 0; j < this.modelScores.length; j++) {
                     let modelScore = this.modelScores[j];
-                    document.getElementById("tournamentScores").innerHTML += "Model Id" + modelScore.modelId + " Score: " + modelScore.score + "<br>";
+                    if (!this.disableDOMS) {
+                        document.getElementById("tournamentScores").innerHTML += "Model Id" + modelScore.modelId + " Score: " + modelScore.score + "<br>";
+                    }
                 }
 
                 if (!this.keepTraining) {
@@ -138,7 +148,7 @@ class NeuralNetworkTrainer {
     async createModel(modelSavePath) {
         if (modelSavePath == null) {
             const inputLayer = tf.layers.dense({ inputShape: 71, units: 71, activation: 'relu' });
-            const hiddenLayer1 = tf.layers.dense({ units: 72, activation: 'relu' });
+            const hiddenLayer1 = tf.layers.dense({ units: 71, activation: 'relu' });
             const hiddenLayer2 = tf.layers.dense({ units: 50, activation: 'relu' });
             const hiddenLayer3 = tf.layers.dense({ units: 25, activation: 'relu' });
             const hiddenLayer4 = tf.layers.dense({ units: 5, activation: 'relu' });

@@ -1,5 +1,5 @@
 class playMatch {
-    constructor(model0Id, model1Id, winningReward, _matchIndex, showMoves) {
+    constructor(model0Id, model1Id, winningReward, _matchIndex, showMoves, disableDOMS) {
         this.showMoves = showMoves;
         this.model0Reward = 0;
         this.model1Reward = 0;
@@ -11,6 +11,7 @@ class playMatch {
         this.twoMovesAgo;
         this.moveCtr = 0;
         this.winningReward = winningReward;
+        this.disableDOMS = disableDOMS;
         this.monteCarlo = new monteCarloTreeSearch();
         this.matchResults = {
             model0Points: 0,
@@ -42,8 +43,10 @@ class playMatch {
         }
     }
     async start() {
-        document.getElementById("modelThatIsWhite").innerHTML = this.model0Id;
-        board = Chessboard('board', this.chess.fen());
+        if (!this.disableDOMS) {
+            document.getElementById("modelThatIsWhite").innerHTML = this.model0Id;
+            board = Chessboard('board', this.chess.fen());
+        }
 
         await this.makeAMoveUntillGameOver();
 
@@ -104,7 +107,9 @@ class playMatch {
                 this.history.push(justBoardStateAsFenString);
 
                 board = Chessboard('board', this.chess.fen());
-                document.getElementById("moveMade").innerHTML = move;
+                if (!this.disableDOMS) {
+                    document.getElementById("moveMade").innerHTML = move;
+                }
 
             })();
 
