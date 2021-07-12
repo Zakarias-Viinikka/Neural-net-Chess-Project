@@ -11,6 +11,7 @@ class NeuralNetworkTrainer {
         this.showMoves = localStorage.getItem("showMoves");
         this.winningReward = 1000;
         this.amountOfMatches = 0;
+        this.amountOfModels = 2;
 
         if (localStorage.getItem("matchesPlayed") == null) {
             localStorage.setItem("matchesPlayed", "0");
@@ -119,7 +120,7 @@ class NeuralNetworkTrainer {
     async loadFromFiles(modelName) {
         NNTrainer.models = [];
         NNTrainer.modelScores = [];
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < this.amountOfModels; i++) {
             let modelPath = 'http://localhost/models/' + modelName + ".json";
             await this.addModelToTrainer(modelPath);
         }
@@ -128,7 +129,7 @@ class NeuralNetworkTrainer {
     async loadModels() {
         NNTrainer.models = [];
         NNTrainer.modelScores = [];
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < this.amountOfModels; i++) {
             let modelPath = 'indexeddb://model' + i;
             await this.addModelToTrainer(modelPath);
         }
@@ -136,7 +137,7 @@ class NeuralNetworkTrainer {
 
     async createModel(modelSavePath) {
         if (modelSavePath == null) {
-            const inputLayer = tf.layers.dense({ inputShape: 71, units: 10, activation: 'relu' });
+            const inputLayer = tf.layers.dense({ inputShape: 71, units: 71, activation: 'relu' });
             const hiddenLayer1 = tf.layers.dense({ units: 72, activation: 'relu' });
             const hiddenLayer2 = tf.layers.dense({ units: 50, activation: 'relu' });
             const hiddenLayer3 = tf.layers.dense({ units: 25, activation: 'relu' });
@@ -194,7 +195,7 @@ class NeuralNetworkTrainer {
             }
 
             for (let i = 0; i < topHalf.length; i++) {
-                await this.cloneAndMutate(topHalf[i], losers[i]).then(r => r);
+                await this.cloneAndMutate(topHalf[i], losers[i]);
             }
         } else if (this.trainingGoal = "eat") {
 
@@ -206,7 +207,7 @@ class NeuralNetworkTrainer {
     async cloneAndMutate(originalElite, toBecomeMutated) {
         let eliteWeights = originalElite.model.getWeights();
         await this.setWeight(toBecomeMutated, eliteWeights).then(r => r);
-        await toBecomeMutated.mutate(this.rate).then(r => r);
+        await toBecomeMutated.mutate(this.rate);
 
     }
 

@@ -78,7 +78,7 @@
         </div>
 
         <div class="row">
-            Mutation Rate in %: &nbsp; <span id="mutationRateSpan">0</span><br> <small id=""> (odds of weight randomly changing when mutating (there's like tens of thousands of weights))</small>
+            Mutation Rate: &nbsp; <span id="mutationRateSpan">0</span><br> <small id=""> (odds of weight randomly changing when mutating (there's like tens of thousands of weights))</small>
         </div>
         <div class="row">
             <input id="mutationSlider" type="range" min="1" max="100" value="1">
@@ -205,7 +205,7 @@
         });
 
         document.getElementById("CreateNewModels").addEventListener("click", async() => {
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < 2; i++) {
                 await NNTrainer.addModelToTrainer();
             }
             await mutateModels().then(response => NNTrainer.models[0].model.getWeights()[0].print());
