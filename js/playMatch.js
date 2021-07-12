@@ -47,7 +47,6 @@ class playMatch {
 
         await this.makeAMoveUntillGameOver();
 
-        console.log(this.matchResults);
         return this.matchResults;
     }
 
