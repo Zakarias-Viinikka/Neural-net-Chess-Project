@@ -37,10 +37,9 @@ class NeuralNetworkTrainer {
         await this.tournament();
 
         console.log("All matches concluded");
-        console.log("memory: " + tf.memory().numTensors)
-
 
         if (this.keepTraining) {
+            console.log(new Date());
             this.updateFinishedTrainingLogs()
             await this.saveModels().then(r => r);
             this.resetModelScores();
@@ -187,11 +186,11 @@ class NeuralNetworkTrainer {
     updateScores(white, black, loser) {
         if (loser != "draw") {
             if (loser == black) {
-                this.updateModelScore(white, 2)
-                this.updateModelScore(black, -2)
+                this.updateModelScore(white, 1000)
+                this.updateModelScore(black, -1000)
             } else {
-                this.updateModelScore(white, -2)
-                this.updateModelScore(black, 2)
+                this.updateModelScore(white, -1000)
+                this.updateModelScore(black, 1000)
             }
         }
     }
@@ -330,6 +329,7 @@ class NeuralNetworkTrainer {
                     history = [];
                 }
                 this.rewardEatingPieces(move, modelId0, modelId1, modelToMove);
+                this.rewardChecks(this.chess, modelId0, modelId1, modelToMove);
                 let justBoardStateAsFenString = "";
                 let ctr = 0;
                 while (true) {
@@ -374,8 +374,25 @@ class NeuralNetworkTrainer {
                 modelToPunish = model0Id;
             }
 
-            this.updateModelScore(modelToReward, 0.1)
-            this.updateModelScore(modelToPunish, -0.1)
+            this.updateModelScore(modelToReward, 1)
+            this.updateModelScore(modelToPunish, -1)
+        }
+    }
+
+    rewardChecks(chess, model0Id, model1Id, modelToMove) {
+        let inCheck = chess.in_check();
+        if (inCheck) {
+            let modelToReward = model0Id;
+            let modelToPunish = model1Id;
+            if (modelToMove == 0) {
+                modelToReward = model0Id;
+                modelToPunish = model1Id;
+            } else {
+                modelToReward = model0Id;
+                modelToPunish = model1Id;
+            }
+            this.updateModelScore(modelToReward, 4);
+            this.updateModelScore(modelToPunish, -4);
         }
     }
 

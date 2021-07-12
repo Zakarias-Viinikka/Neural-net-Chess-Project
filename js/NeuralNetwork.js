@@ -32,7 +32,6 @@ class NeuralNetwork {
 
         this.model.setWeights(mutatedWeights);
         tf.dispose(mutatedWeights);
-        console.log(tf.memory().numTensors)
     }
 
     async mutate(rate) {
@@ -46,7 +45,12 @@ class NeuralNetwork {
             for (let j = 0; j < values.length; j++) {
                 if (Math.random() < rate) {
                     let w = values[j];
-                    values[j] = this._zig.slowTraining(w);
+                    let hardMutate = parseInt(Math.random() * 100, 10);
+                    if (hardMutate <= 9) {
+                        values[j] = this._zig.nextGaussian(w);
+                    } else {
+                        values[j] = this._zig.slowTraining(w);
+                    }
                 }
             }
             let newTensor = tf.tensor(values, shape);
@@ -56,6 +60,5 @@ class NeuralNetwork {
 
         this.model.setWeights(mutatedWeights);
         tf.dispose(mutatedWeights);
-        console.log(tf.memory().numTensors)
     }
 }
