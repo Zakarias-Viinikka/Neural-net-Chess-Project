@@ -8,6 +8,7 @@ class monteCarloTreeSearch {
     }
 
     async getBestMove(model, chess, history) {
+
         this.chess = chess;
         this.originalPosition = chess.fen();
         this.model = model;

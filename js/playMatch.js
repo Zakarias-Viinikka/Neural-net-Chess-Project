@@ -1,5 +1,5 @@
 class playMatch {
-    constructor(model0Id, model1Id, winningReward, testingLogic) {
+    constructor(model0Id, model1Id, winningReward, _matchIndex, testingLogic, ) {
         this.testingLogic = testingLogic;
         this.model0Reward = 0;
         this.model1Reward = 0;
@@ -14,7 +14,8 @@ class playMatch {
         this.monteCarlo = new monteCarloTreeSearch();
         this.matchResults = {
             model0Points: 0,
-            model1Points: 0
+            model1Points: 0,
+            matchIndex: _matchIndex
         };
         if (parseInt(Math.random() * 2) == 0) {
             this.modelThatGotWhite = 0;
@@ -46,7 +47,6 @@ class playMatch {
             board = Chessboard('board', this.chess.fen());
         }
         await this.makeAMoveUntillGameOver();
-        console.log(this.matchResults)
         return this.matchResults;
     }
 

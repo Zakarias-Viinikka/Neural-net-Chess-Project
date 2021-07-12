@@ -83,14 +83,6 @@
         <div class="row">
             <input id="mutationSlider" type="range" min="1" max="100" value="1">
         </div>
-        <!-- 
-            
-        let mutationRate = localStorage.getItem("mutationRate");
-        let mutationSlider = document.getElementById("mutationSlider");
-        mutationSlider.value = mutationRate;
-        let mutationRateSpan = document.getElementById("mutationRateSpan");
-        mutationRateSpan.innerHTML = mutationSlider.value;
-        -->
         <div class="row">
             <button class="btn btn-secondary" id="startTheTraining">Start Training</button>
             <button class="btn btn-secondary" id="CreateNewModels">Create new Models</button>
@@ -121,6 +113,8 @@
     <script src="../js/chess.js"></script>
     <!-- tensorflow.js -->
     <script src='../js/tf.min.js'></script>
+    <!-- Multithread.js -->
+    <script src='../js/multithread.js-master/multithread.js'></script>
     <!-- own scripts -->
     <script src="../js/ChessboardToNNInput.js"></script>
     <script src="../js/RandomNormalDistribution.js"></script>

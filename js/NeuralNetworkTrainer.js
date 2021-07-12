@@ -7,8 +7,13 @@ class NeuralNetworkTrainer {
         this.modelScores = [];
         this.chess = chess;
         this.matchesPlayed = 0;
+        this.matchesToPlay = 0;
+        this.matchesFinished = [];
         this.showMoves = localStorage.getItem("showMoves");
         this.winningReward = 1000;
+        this.amountOfMatches = 0;
+        this.MT = new Multithread(6);
+        this.testingLogic = true;
 
         if (localStorage.getItem("matchesPlayed") == null) {
             localStorage.setItem("matchesPlayed", "0");
@@ -34,25 +39,24 @@ class NeuralNetworkTrainer {
     }
 
     async startTraining() {
-        console.log("Started Training");
-
         await this.tournament();
+    }
 
+    async matchFinished() {
         console.clear();
         console.log("Started: " + this.startTime);
         console.log("All matches concluded");
 
         if (this.keepTraining) {
-            console.log(new Date());
             this.updateFinishedTrainingLogs()
             await this.saveModels().then(r => r);
             this.resetModelScores();
             await this.evolution().then(r => r);
-            await this.startTraining();
         }
     }
 
     async tournament() {
+        console.log("Started Training");
         if (!this.keepTraining) {
             document.getElementById("tournamentScores").innerHTML = "";
             this.matchesPlayed--;
@@ -62,39 +66,84 @@ class NeuralNetworkTrainer {
         let modelId = 0;
         let opponentModelId = 1;
         let matchPlayers = [];
-        let results = [];
-        for (let i = 0; i < parseInt(this.models.length / 2); i++) {
+        this.matchesToPlay = parseInt(this.models.length / 2);
+        this.matchesFinished = [];
+        for (let i = 0; i < this.matchesToPlay; i++) {
             modelId = i;
             opponentModelId = this.models.length - i - 1;
-            matchPlayers[i] = new playMatch(modelId, opponentModelId, this.winningReward, true);
-            await matchPlayers[i].start().then(r => results[i] = r);
-            this.updateModelScore(results[i].model0Id, results.model0Points)
-            this.updateModelScore(results[i].model1Id, results.model1Points)
+            matchPlayers[i] = new playMatch(modelId, opponentModelId, this.winningReward, i, this.testingLogic);
+            if (this.testingLogic) {
+                let results;
 
-            //update visually scores so far
-            if (this.keepTraining) {
-                document.getElementById("modelThatWon").innerHTML = results[i].winner;
-                document.getElementById("modelThatWonColor").innerHTML = results[i].white;
-                document.getElementById("matchOutcome").innerHTML = results[i].result;
-                document.getElementById("tournamentScores").innerHTML = "";
+                await matchPlayers[i].start().then(r => results = r);
+                this.updateModelScore(results.model0Id, results.model0Points)
+                this.updateModelScore(results.model1Id, results.model1Points)
+
+                //update visually scores so far
+                if (this.keepTraining) {
+                    document.getElementById("modelThatWon").innerHTML = results.winner;
+                    document.getElementById("modelThatWonColor").innerHTML = results.white;
+                    document.getElementById("matchOutcome").innerHTML = results.result;
+                    document.getElementById("tournamentScores").innerHTML = "";
+                }
+                for (let j = 0; j < this.modelScores.length; j++) {
+                    let modelScore = this.modelScores[j];
+                    document.getElementById("tournamentScores").innerHTML += "Model Id" + modelScore.modelId + " Score: " + modelScore.score + "<br>";
+                }
+
+                if (!this.keepTraining) {
+                    break;
+                }
+                console.log(`Match number ${i + 1} concluded.`);
+
+                let matchesPlayed = parseInt(localStorage.getItem("matchesPlayed"));
+                matchesPlayed++;
+                localStorage.setItem("matchesPlayed", matchesPlayed);
+
+                this.chess.reset();
+
+                this.matchFinished();
+                if (this.keepTraining) {
+                    await this.startTraining();
+                }
+            } else {
+                this.MT.process((async() => { return await matchPlayers[i].start })(), this.MTCallback)();
             }
-            for (let j = 0; j < this.modelScores.length; j++) {
-                let modelScore = this.modelScores[j];
-                document.getElementById("tournamentScores").innerHTML += "Model Id" + modelScore.modelId + " Score: " + modelScore.score + "<br>";
+        }
+    }
 
-            }
-
-            if (!this.keepTraining) {
+    MTCallback(returnValue) {
+        console.log(returnValue);
+        let allOtherMatchesFinished = true;
+        if (returnValue != null) {
+            this.matchesFinished[returnValue.matchIndex] = true;
+        }
+        for (let i = 0; i < this.matchesToPlay; i++) {
+            if (this.matchesFinished[i] == false) {
+                allOtherMatchesFinished = false;
                 break;
             }
-            console.log(`Match number ${i + 1} concluded.`);
-
-            let matchesPlayed = parseInt(localStorage.getItem("matchesPlayed"));
-            matchesPlayed++;
-            localStorage.setItem("matchesPlayed", matchesPlayed);
-
-            this.chess.reset();
         }
+
+        if (returnValue != null) {
+            this.updateModelScore(returnValue.model0Id, returnValue.model0Points)
+            this.updateModelScore(returnValue.model1Id, returnValue.model1Points)
+        }
+
+        if (allOtherMatchesFinished) {
+            this.allMTMatchesFinished();
+        } else {
+            setTimeout(this.MTCallback, 5000);
+        }
+    }
+
+    async allMTMatchesFinished() {
+        console.log(`Tournament number ${i + 1} concluded.`);
+
+        let matchesPlayed = parseInt(localStorage.getItem("matchesPlayed"));
+        matchesPlayed += this.amountOfMatches;
+        localStorage.setItem("matchesPlayed", matchesPlayed);
+        await this.startTraining();
     }
 
     async saveModels() {
