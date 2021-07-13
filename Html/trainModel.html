@@ -242,6 +242,36 @@
         document.getElementById("loadModel").addEventListener("click", async() => {
             await NNTrainer.loadModels().then(r => NNTrainer.models[0].model.getWeights()[0].print());
         });
+
+        if ('wakeLock' in navigator) {
+
+            //navigator.wakeLock is the main standby API property.
+            //request method requests the computer to not enter standby mode. Here "display" indicates that the monitor shouldn't enter standby mode.
+            let wakeLock;
+
+            const requestWakeLock = async() => {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => {
+                        if (wakeLock !== null && document.visibilityState === 'visible') {
+                            requestWakeLock();
+                        }
+                    });
+                } catch (err) {
+                    // if wake lock request fails - usually system related, such as battery
+                    wakeButton.dataset.status = 'off';
+                    wakeButton.textContent = 'Turn Wake Lock ON';
+                    statusElem.textContent = `${err.name}, ${err.message}`;
+
+                }
+            }
+
+            document.addEventListener('visibilitychange', async() => {
+                if (wakeLock !== null && document.visibilityState === 'visible') {
+                    requestWakeLock();
+                }
+            });
+        }
     </script>
 </body>
 

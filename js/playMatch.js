@@ -106,7 +106,9 @@ class playMatch {
 
                 this.history.push(justBoardStateAsFenString);
 
-                board = Chessboard('board', this.chess.fen());
+                if (!this.disableDOMS) {
+                    board = Chessboard('board', this.chess.fen());
+                }
                 if (!this.disableDOMS) {
                     document.getElementById("moveMade").innerHTML = move;
                 }
@@ -158,18 +160,20 @@ class playMatch {
     }
 
     updateLastGameBoard() {
-        Chessboard('board4', {
-            position: this.chess.fen(),
-            showNotation: false
-        });
-        Chessboard('board3', {
-            position: this.oneMoveAgo,
-            showNotation: false
-        });
-        Chessboard('board2', {
-            position: this.twoMovesAgo,
-            showNotation: false
-        });
+        if (!this.disableDOMS) {
+            Chessboard('board4', {
+                position: this.chess.fen(),
+                showNotation: false
+            });
+            Chessboard('board3', {
+                position: this.oneMoveAgo,
+                showNotation: false
+            });
+            Chessboard('board2', {
+                position: this.twoMovesAgo,
+                showNotation: false
+            });
+        }
     }
 
     getMatchResults() {

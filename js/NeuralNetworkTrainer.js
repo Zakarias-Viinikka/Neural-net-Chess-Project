@@ -12,8 +12,7 @@ class NeuralNetworkTrainer {
         this.winningReward = 1000;
         this.amountOfMatches = 0;
         this.amountOfModels = 2;
-
-        this.disableDOMS = true;
+        this.disableDOMS = false;
         if (localStorage.getItem("matchesPlayed") == null) {
             localStorage.setItem("matchesPlayed", "0");
         }
@@ -39,7 +38,9 @@ class NeuralNetworkTrainer {
 
     async startTraining() {
         await this.tournament();
-        console.log("Started: " + this.startTime);
+        if (this.keepTraining) {
+            await this.startTraining();
+        }
     }
 
     async matchFinished() {
@@ -52,7 +53,6 @@ class NeuralNetworkTrainer {
             await this.saveModels().then(r => r);
             this.resetModelScores();
             await this.evolution().then(r => r);
-            this.tournament();
         }
     }
 

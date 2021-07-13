@@ -12,7 +12,7 @@ class NeuralNetwork {
 
     //weights change to a random weight between -1 and 1
     async extremeMutate(rate) {
-        rate = rate / 1000;
+        rate = rate / 10000;
         const weights = this.model.getWeights();
         const mutatedWeights = [];
         for (let i = 0; i < weights.length; i++) {
