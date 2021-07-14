@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="sv">
+
+<head>
+    <meta charset="utf-8">
+    <title> Train Model</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="../css/chessboard-1.0.0.min.css">
+    <style type="text/css">
+        body {
+            background-color: lightgreen;
+            margin-top: 10px;
+        }
+        
+        #board {
+            float: left;
+            display: block;
+        }
+        
+        #moveMade {
+            display: block;
+            width: 80px;
+            font-size: 40px;
+        }
+        
+        button {
+            margin: 2px;
+        }
+        
+        input {
+            margin: 2px;
+        }
+        
+        .historyBoard {
+            display: inline-block;
+            margin: 2px 2px 0 0;
+        }
+        
+        h5 {
+            white-space: nowrap;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body id="body">
+    <div id="container" class="container">
+        <div class="row">
+            <div class="col">
+                <div id="board" style="width: 400px"></div>
+            </div>
+            <div class="col">
+                <div id="board2" class="historyBoard" style="width: 200px"></div>
+                <div id="board3" class="historyBoard" style="width: 200px"></div>
+                <div id="board4" class="historyBoard" style="width: 200px"></div>
+            </div>
+        </div>
+        <div class="row">
+            Depth: &nbsp;
+            <span id="depthSpan">0</span><br>
+        </div>
+        <div class="row">
+            <input id="depthSlider" type="range" min="0" max="100" value="0">
+        </div>
+
+        <div class="row">
+            Mutation Rate: &nbsp; <span id="mutationRateSpan">0</span><br> <small id=""> (odds of weight randomly changing when mutating (there's like tens of thousands of weights))</small>
+        </div>
+        <div class="row">
+            <input id="mutationSlider" type="range" min="1" max="100" value="1">
+        </div>
+        <div class="row">
+            <button class="btn btn-secondary" id="startTheTraining">Start Training</button>
+            <button class="btn btn-secondary" id="createTrainingData">Create new Models</button>
+            <button class="btn btn-secondary" id="loadModel">Load Models</button>
+            <button class="btn btn-secondary" id="showMoves">Show Moves</button>
+        </div>
+        <div class="row">
+            <input type="text" id="saveModelName" placeholder="Save as">
+            <button class="btn btn-secondary" id="saveModelToDownloads">Save Model to Downloads</button>
+        </div>
+        <div class="row">
+            <input type="text" id="loadModelName" placeholder="File name">
+            <button class="btn btn-secondary" id="loadFromFiles">Load model from files</button>
+        </div>
+        <div class="row">
+        </div>
+    </div>
+
+    <!-- bootstrap -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <!-- jquery -->
+    <script src="js/jquery-3.5.1.min.js"></script>
+    <!-- chessboard.js -->
+    <script src="js/chessboard-1.0.0.min.js"></script>
+    <!-- chess.js -->
+    <script src="js/chess.js"></script>
+    <!-- stockfish.js -->
+    <script src="js/stockfish.js-master/src/stockfish.js"></script>
+    <!-- tensorflow.js -->
+    <script src='js/tf.min.js'></script>
+    <!-- own scripts -->
+    <script src="js/ChessboardToNNInput.js"></script>
+    <script src="js/RandomNormalDistribution.js"></script>
+    <script src="js/NeuralNetwork.js"></script>
+    <script src="js/NeuralNetworkTrainer.js"></script>
+    <script src="js/monteCarloTreeSearch.js"></script>
+    <script src="js/playMatch.js"></script>
+    <script src="js/timeout.js"></script>
+    <script>
+        let NNTrainer = new NeuralNetworkTrainer(new Chess());
+        if (localStorage.getItem("mutationRate") == null) {
+            localStorage.setItem("mutationRate", "1");
+        }
+        let mutationRate = localStorage.getItem("mutationRate");
+        let mutationSlider = document.getElementById("mutationSlider");
+        mutationSlider.value = mutationRate;
+        let mutationRateSpan = document.getElementById("mutationRateSpan");
+        mutationRateSpan.innerHTML = mutationSlider.value;
+
+        mutationSlider.oninput = function() {
+            mutationRateSpan.innerHTML = this.value;
+            NNTrainer.rate = this.value;
+            localStorage.setItem("mutationRate", this.value);
+        }
+
+        let depth = localStorage.getItem("treeSearchDepth");
+        if (depth == null) {
+            localStorage.setItem("treeSearchDepth", 0);
+            depth = 0;
+        }
+        let slider = document.getElementById("depthSlider");
+        slider.value = depth;
+        var depthSpan = document.getElementById("depthSpan");
+        depthSpan.innerHTML = slider.value;
+
+        slider.oninput = function() {
+            depthSpan.innerHTML = this.value;
+            localStorage.setItem("treeSearchDepth", this.value);
+        }
+
+
+        document.getElementById("saveModelToDownloads").addEventListener("click", async() => {
+            if (NNTrainer.models[0].model != null) {
+                NNTrainer.saveModelToDownloads(document.getElementById("saveModelName").value);
+            } else {
+                console.log("model doesn't exist. save failed.")
+            }
+        });
+        document.getElementById("loadFromFiles").addEventListener("click", async() => {
+            await NNTrainer.loadFromFiles(document.getElementById("loadModelName").value);
+            console.log("loaded model from downloads and saved it.");
+        });
+        document.getElementById("loadModel").addEventListener("click", async() => {
+            await NNTrainer.loadModels().then(r => NNTrainer.models[0].model.getWeights()[0].print());
+        });
+
+        let monteCarlo = new monteCarloTreeSearch(new Chess(), depth);
+        NNTrainer.disableDOMS = true;
+        NNTrainer.amountOfModels = 1;
+        NNTrainer.locationReload = "false";
+
+        var game = new Chess();
+        let board = Chessboard('board', 'start');
+
+        //stockfish
+        let bestMove = "";
+        let stockfish = STOCKFISH(); //setoption name UCI_AnalyseMode value true
+        let isok = false;
+        stockfish.postMessage(`uci`);
+        let stockfishDepth = 15;
+        //setoption name UCI_AnalyseMode value true
+        /*<id> = UCI_AnalyseMode, type check
+		   The engine wants to behave differently when analysing or playing a game.
+		   For example when playing it can use some kind of learning.
+		   This is set to false if the engine is playing a game, otherwise it is true.*/
+        stockfish.onmessage = function(event) {
+            //NOTE: Web Workers wrap the response in an object.
+            if (typeof event == "string" && event.indexOf("bestmove") != -1) {
+                bestMove = event;
+            } else if (typeof event == "string" && event.indexOf("info") != -1) {
+                console.log(event)
+            } else if (event == "readyok") {
+                //console.log(event.data);
+            }
+            return event;
+        };
+        //stockfish
+
+        let neuralNetFinalArray = [];
+
+        createStuff();
+        async function createStuff() {
+            await timeout(1000);
+
+            createNewModel()
+                .then(() => createTrainingData())
+        }
+
+        async function createTrainingData() {
+            let originalBoard = "";
+            let futureBoard = "";
+            let trainingData = [];
+            let boardEvaluations = [];
+
+            let tempGame = new Chess();
+            for (let i = 0; i < 10; i++) {
+                game.reset(); //starting board
+                let possibleMoves = game.moves();
+                let stockfishEvaluation = 0; //
+                //add training data//
+                while (!game.game_over()) {
+                    game.move(possibleMoves[parseInt(Math.random() * possibleMoves.length)])
+                    possibleMoves = game.moves();
+                    let originalBoard = game.fen();
+                    for (var v = 0; v < possibleMoves.length; v++) { //for every possible move for a particular board state
+                        stockfish.postMessage("ucinewgame");
+                        stockfish.postMessage("isready");
+                        tempGame.load(originalBoard);
+                        tempGame.move(possibleMoves[v]);
+                        stockfish.postMessage("position" + tempGame.fen())
+                        stockfish.postMessage("go" + stockfishDepth + "15");
+                        stockfishEvaluation = await getStockfishResult(tempGame.fen());
+                        console.log(stockfishEvaluation);
+                        //adds training data
+                        let tfinput = await evaluateMove(tempGame)
+                        console.log(tfinput);
+                        console.log(evaluation);
+                        let target = stockfishEvaluation;
+
+                        //const response = await model.fit([tfinput], [target] /*, config?*/ );
+                        //console.log(response.history.loss[0]);
+                        tf.dispose(tfinput);
+                        tf.dispose(target);
+                        //resets board
+                    }
+                }
+            }
+            return "created training data";
+        }
+
+        async function getStockfishResult() {
+            while (bestMove == "") {
+                await timeout(50);
+            }
+            let theBestMove = bestMove;
+            bestMove = "";
+
+            return evaluation;
+        }
+
+        async function getOk() {
+
+        }
+
+        async function evaluateMove(board) {
+            let moveEvaluation;
+            let chessboardAsArray = await ChessboardToNNInput(board, []);
+            this.drawState = chessboardAsArray[70];
+            let tfChessBoard = await tf.tensor2d([chessboardAsArray]);
+            tf.tidy(() => {
+
+                let predictionResult = NNTrainer.models[0].model.predict(tfChessBoard).dataSync()[0];
+                moveEvaluation = predictionResult;
+            })
+            tf.dispose(tfChessBoard)
+
+            return moveEvaluation
+        }
+
+
+        function finishedTraining() {
+            console.log('Training has been finished!');
+            console.log('Number of tensors not disposed: ' + tf.memory().numTensors);
+            let fenTest = "rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 1";
+            game.load(fenTest);
+            board = Chessboard('board', fenTest);
+            /*let testArr = [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 5, 0, 1, 0, 0, 1, 7, 0, 7, 1, 0, 0, 0, 7, 0, 11, 7, 0, 0, 7, 7, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];	
+            let tfTestArr = tf.tensor2d([testArr]);
+            model.predict([tfTestArr]).print();
+            tf.dispose(tfTestArr);*/
+        }
+
+        async function createNewModel() {
+            for (let i = 0; i < NNTrainer.amountOfModels; i++) {
+                await NNTrainer.addModelToTrainer();
+            }
+            return "created new model";
+        }
+
+        async function mutateModels() {
+            for (let j = 0; j < 100; j++) {
+                for (let i = 0; i < NNTrainer.amountOfModels; i++) {
+                    await NNTrainer.models[i].extremeMutate(0.5);
+                }
+            }
+        }
+
+        document.getElementById("startTheTraining").addEventListener("click", async() => {});
+
+        document.getElementById("saveModelToDownloads").addEventListener("click", async() => {
+            if (NNTrainer.models[0].model != null) {
+                NNTrainer.saveModelToDownloads(document.getElementById("saveModelName").value);
+            } else {
+                console.log("model doesn't exist. save failed.")
+            }
+        });
+        document.getElementById("loadFromFiles").addEventListener("click", async() => {
+            await NNTrainer.loadFromFiles(document.getElementById("loadModelName").value);
+            console.log("loaded model from downloads and saved it.");
+        });
+
+
+
+
+
+
+
+
+
+
+
+
+
+        if ('wakeLock' in navigator) {
+
+            //navigator.wakeLock is the main standby API property.
+            //request method requests the computer to not enter standby mode. Here "display" indicates that the monitor shouldn't enter standby mode.
+            let wakeLock;
+
+            const requestWakeLock = async() => {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => {
+                        if (wakeLock !== null && document.visibilityState === 'visible') {
+                            requestWakeLock();
+                        }
+                    });
+                } catch (err) {
+                    // if wake lock request fails - usually system related, such as battery
+                    wakeButton.dataset.status = 'off';
+                    wakeButton.textContent = 'Turn Wake Lock ON';
+                    statusElem.textContent = `${err.name}, ${err.message}`;
+
+                }
+            }
+
+            document.addEventListener('visibilitychange', async() => {
+                if (wakeLock !== null && document.visibilityState === 'visible') {
+                    requestWakeLock();
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
