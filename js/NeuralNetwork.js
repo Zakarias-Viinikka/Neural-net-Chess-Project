@@ -12,7 +12,7 @@ class NeuralNetwork {
 
     //weights change to a random weight between -1 and 1
     async extremeMutate(rate) {
-        rate = rate / 10000;
+        rate = rate / 100000;
         const weights = this.model.getWeights();
         const mutatedWeights = [];
         for (let i = 0; i < weights.length; i++) {
@@ -45,8 +45,8 @@ class NeuralNetwork {
             for (let j = 0; j < values.length; j++) {
                 if (Math.random() < rate) {
                     let w = values[j];
-                    let hardMutate = parseInt(Math.random() * 100, 10);
-                    if (hardMutate <= 9) {
+                    let hardMutate = Math.random() * 100;
+                    if (hardMutate <= 0.1) {
                         values[j] = this._zig.nextGaussian(w);
                     } else {
                         values[j] = this._zig.slowTraining(w);

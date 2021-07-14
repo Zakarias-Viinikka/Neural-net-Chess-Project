@@ -9,10 +9,16 @@ class NeuralNetworkTrainer {
         this.matchesToPlay = 0;
         this.matchesPlayed = 0;
         this.showMoves = localStorage.getItem("showMoves");
-        this.winningReward = 1000;
+        this.winningReward = 10000;
         this.amountOfMatches = 0;
         this.amountOfModels = 2;
         this.disableDOMS = false;
+        this.locationReload = true;
+        this.locationReloadctr = 0;
+        this.keepTraining = localStorage.getItem("keepTraining");
+        if (this.keepTraining == "true") {
+            this.keepTraining = true;
+        }
         if (localStorage.getItem("matchesPlayed") == null) {
             localStorage.setItem("matchesPlayed", "0");
         }
@@ -37,16 +43,24 @@ class NeuralNetworkTrainer {
     }
 
     async startTraining() {
-        await this.tournament();
-        if (this.keepTraining) {
-            await this.startTraining();
+        localStorage.setItem("keepTraining", true);
+        this.keepTraining = true;
+        while (this.keepTraining) {
+            await this.tournament();
+            if (this.locationReload) {
+                this.locationReloadctr++;
+                if (this.locationReloadctr > 5) {
+                    document.location.reload();
+                }
+            }
+            await timeout(2);
         }
     }
 
     async matchFinished() {
         this.chess.reset();
         if (!this.disableDOMS) {
-            document.getElementById("matchNumber").innerHTML = this.matchesPlayed;
+            document.getElementById("matchNumber").innerHTML = localStorage.getItem("matchesPlayed");
         }
         if (this.keepTraining) {
             this.updateFinishedTrainingLogs()
@@ -64,52 +78,50 @@ class NeuralNetworkTrainer {
             this.matchesPlayed--;
         }
         if (!this.disableDOMS) {
-            document.getElementById("matchNumber").innerHTML = this.matchesPlayed;
+            document.getElementById("matchNumber").innerHTML = localStorage.getItem("matchesPlayed");
         }
         let modelId = 0;
         let opponentModelId = 1;
         let matchPlayers = [];
         this.matchesPlayed++;
         this.matchesToPlay = parseInt(this.models.length / 2);
-        for (let i = 0; i < this.matchesToPlay; i++) {
+        for (let i = 0; i < this.matchesToPlay && this.keepTraining; i++) {
+            modelId = i;
+            opponentModelId = this.models.length - i - 1;
+            matchPlayers[i] = new playMatch(modelId, opponentModelId, this.winningReward, i, this.showMoves, this.disableDOMS);
+            let results;
+
+            await matchPlayers[i].start().then(r => results = r);
+            this.updateModelScore(results.model0Id, results.model0Points)
+            this.updateModelScore(results.model1Id, results.model1Points)
+
+            //update visually scores so far
             if (this.keepTraining) {
-                modelId = i;
-                opponentModelId = this.models.length - i - 1;
-                matchPlayers[i] = new playMatch(modelId, opponentModelId, this.winningReward, i, this.showMoves, this.disableDOMS);
-                let results;
-
-                await matchPlayers[i].start().then(r => results = r);
-                this.updateModelScore(results.model0Id, results.model0Points)
-                this.updateModelScore(results.model1Id, results.model1Points)
-
-                //update visually scores so far
-                if (this.keepTraining) {
-                    if (!this.disableDOMS) {
-                        document.getElementById("modelThatWon").innerHTML = results.winner;
-                        document.getElementById("modelThatWonColor").innerHTML = results.white;
-                        document.getElementById("matchOutcome").innerHTML = results.result;
-                        document.getElementById("tournamentScores").innerHTML = "";
-                    }
+                if (!this.disableDOMS) {
+                    document.getElementById("modelThatWon").innerHTML = results.winner;
+                    document.getElementById("modelThatWonColor").innerHTML = results.white;
+                    document.getElementById("matchOutcome").innerHTML = results.result;
+                    document.getElementById("tournamentScores").innerHTML = "";
                 }
-                for (let j = 0; j < this.modelScores.length; j++) {
-                    let modelScore = this.modelScores[j];
-                    if (!this.disableDOMS) {
-                        document.getElementById("tournamentScores").innerHTML += "Model Id" + modelScore.modelId + " Score: " + modelScore.score + "<br>";
-                    }
-                }
-
-                if (!this.keepTraining) {
-                    break;
-                }
-
-                let matchesPlayed = parseInt(localStorage.getItem("matchesPlayed"));
-                matchesPlayed++;
-                localStorage.setItem("matchesPlayed", matchesPlayed);
-
-                this.chess.reset();
             }
+            for (let j = 0; j < this.modelScores.length; j++) {
+                let modelScore = this.modelScores[j];
+                if (!this.disableDOMS) {
+                    document.getElementById("tournamentScores").innerHTML += "Model Id" + modelScore.modelId + " Score: " + modelScore.score + "<br>";
+                }
+            }
+
+            if (!this.keepTraining) {
+                break;
+            }
+
+            let matchesPlayed = parseInt(localStorage.getItem("matchesPlayed"));
+            matchesPlayed++;
+            localStorage.setItem("matchesPlayed", matchesPlayed);
+
+            this.chess.reset();
         }
-        this.matchFinished();
+        await this.matchFinished();
     }
 
     async saveModels() {
@@ -218,7 +230,6 @@ class NeuralNetworkTrainer {
         let eliteWeights = originalElite.model.getWeights();
         await this.setWeight(toBecomeMutated, eliteWeights).then(r => r);
         await toBecomeMutated.mutate(this.rate);
-
     }
 
     async setWeight(whoToSet, weights) {
