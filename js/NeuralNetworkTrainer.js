@@ -9,7 +9,7 @@ class NeuralNetworkTrainer {
         this.matchesToPlay = 0;
         this.matchesPlayed = 0;
         this.showMoves = localStorage.getItem("showMoves");
-        this.winningReward = 10000;
+        this.winningReward = 100;
         this.amountOfMatches = 0;
         this.amountOfModels = 2;
         this.disableDOMS = false;
@@ -60,7 +60,7 @@ class NeuralNetworkTrainer {
     async matchFinished() {
         this.chess.reset();
         if (!this.disableDOMS) {
-            document.getElementById("matchNumber").innerHTML = localStorage.getItem("matchesPlayed");
+            document.getElementById("matchesPlayed").innerHTML = localStorage.getItem("matchesPlayed");
         }
         if (this.keepTraining) {
             this.updateFinishedTrainingLogs()
@@ -78,7 +78,7 @@ class NeuralNetworkTrainer {
             this.matchesPlayed--;
         }
         if (!this.disableDOMS) {
-            document.getElementById("matchNumber").innerHTML = localStorage.getItem("matchesPlayed");
+            document.getElementById("matchesPlayed").innerHTML = localStorage.getItem("matchesPlayed");
         }
         let modelId = 0;
         let opponentModelId = 1;
@@ -159,11 +159,11 @@ class NeuralNetworkTrainer {
 
     async createModel(modelSavePath) {
         if (modelSavePath == null) {
-            const inputLayer = tf.layers.dense({ inputShape: 71, units: 71, activation: 'relu' });
-            const hiddenLayer1 = tf.layers.dense({ units: 71, activation: 'relu' });
-            const hiddenLayer2 = tf.layers.dense({ units: 50, activation: 'relu' });
-            const hiddenLayer3 = tf.layers.dense({ units: 25, activation: 'relu' });
-            const hiddenLayer4 = tf.layers.dense({ units: 5, activation: 'relu' });
+            const inputLayer = tf.layers.dense({ inputShape: 71, units: 71, activation: 'sigmoid' });
+            const hiddenLayer1 = tf.layers.dense({ units: 71, activation: 'sigmoid' });
+            const hiddenLayer2 = tf.layers.dense({ units: 50, activation: 'sigmoid' });
+            const hiddenLayer3 = tf.layers.dense({ units: 25, activation: 'sigmoid' });
+            const hiddenLayer4 = tf.layers.dense({ units: 5, activation: 'sigmoid' });
             const outputLayer = tf.layers.dense({ units: 1, activation: 'sigmoid' });
 
             const model = tf.sequential();
@@ -200,7 +200,6 @@ class NeuralNetworkTrainer {
     }
 
     async evolution() {
-
         let topHalf = [];
         let losers = [];
         if (this.trainingGoal = "win") {

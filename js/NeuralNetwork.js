@@ -9,33 +9,8 @@ class NeuralNetwork {
         newModel.setWeights(this.model.getWeights());
         return newModel;
     }
-
-    //weights change to a random weight between -1 and 1
-    async extremeMutate(rate) {
-        rate = rate / 100000;
-        const weights = this.model.getWeights();
-        const mutatedWeights = [];
-        for (let i = 0; i < weights.length; i++) {
-            let tensor = weights[i];
-            let shape = weights[i].shape;
-            let values = tensor.dataSync().slice();
-            for (let j = 0; j < values.length; j++) {
-                if (Math.random() < rate) {
-                    let w = values[j];
-                    values[j] = this._zig.nextGaussian();
-                }
-            }
-            let newTensor = tf.tensor(values, shape);
-            mutatedWeights[i] = newTensor;
-        }
-        this.model.setWeights(mutatedWeights);
-
-        this.model.setWeights(mutatedWeights);
-        tf.dispose(mutatedWeights);
-    }
-
     async mutate(rate) {
-        rate = rate / 100;
+        rate = rate / 1000;
         const weights = this.model.getWeights();
         const mutatedWeights = [];
         for (let i = 0; i < weights.length; i++) {

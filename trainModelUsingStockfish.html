@@ -102,6 +102,7 @@
     <!-- tensorflow.js -->
     <script src='js/tf.min.js'></script>
     <!-- own scripts -->
+    <script src="js/math/centiPawnsToWinningProbability.js"></script>
     <script src="js/ChessboardToNNInput.js"></script>
     <script src="js/RandomNormalDistribution.js"></script>
     <script src="js/NeuralNetwork.js"></script>
@@ -171,17 +172,22 @@
         let isok = false;
         stockfish.postMessage(`uci`);
         let stockfishDepth = 15;
+        let stockfishEvaluation;
         //setoption name UCI_AnalyseMode value true
         /*<id> = UCI_AnalyseMode, type check
 		   The engine wants to behave differently when analysing or playing a game.
 		   For example when playing it can use some kind of learning.
 		   This is set to false if the engine is playing a game, otherwise it is true.*/
         stockfish.onmessage = function(event) {
+            if (!event) {
+                console.log(event)
+            }
             //NOTE: Web Workers wrap the response in an object.
+            //console.log(event)
             if (typeof event == "string" && event.indexOf("bestmove") != -1) {
                 bestMove = event;
             } else if (typeof event == "string" && event.indexOf("info") != -1) {
-                console.log(event)
+                stockfishEvaluation = event;
             } else if (event == "readyok") {
                 //console.log(event.data);
             }
@@ -220,19 +226,18 @@
                         stockfish.postMessage("isready");
                         tempGame.load(originalBoard);
                         tempGame.move(possibleMoves[v]);
-                        stockfish.postMessage("position" + tempGame.fen())
-                        stockfish.postMessage("go" + stockfishDepth + "15");
-                        stockfishEvaluation = await getStockfishResult(tempGame.fen());
-                        console.log(stockfishEvaluation);
+                        stockfish.postMessage("position fen " + tempGame.fen())
+                        stockfish.postMessage("go " + stockfishDepth + "15");
+                        let target = await getStockfishEvaluation(tempGame.fen());
+                        let prediction = await evaluateMove(tempGame)
+                        console.log(possibleMoves[v]);
+                        console.log(target + "% chance to win");
+                        console.log(prediction + "model evaluation");
                         //adds training data
-                        let tfinput = await evaluateMove(tempGame)
-                        console.log(tfinput);
-                        console.log(evaluation);
-                        let target = stockfishEvaluation;
 
-                        //const response = await model.fit([tfinput], [target] /*, config?*/ );
+                        //const response = await model.fit([prediction], [target] /*, config?*/ );
                         //console.log(response.history.loss[0]);
-                        tf.dispose(tfinput);
+                        tf.dispose(prediction);
                         tf.dispose(target);
                         //resets board
                     }
@@ -241,13 +246,16 @@
             return "created training data";
         }
 
-        async function getStockfishResult() {
+        async function getStockfishEvaluation() {
             while (bestMove == "") {
                 await timeout(50);
             }
             let theBestMove = bestMove;
             bestMove = "";
-
+            let sfe = stockfishEvaluation;
+            let evaluation = sfe.slice(sfe.indexOf("cp") + 3).split(" ")[0];
+            evaluation = centiPawnsToWinningProbability(evaluation)
+            stockfishEvaluation = "";
             return evaluation;
         }
 

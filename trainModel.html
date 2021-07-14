@@ -57,8 +57,10 @@
                 <br>
                 <h5>Scores so far:</h5><br>
                 <div id="tournamentScores"></div>
-                <h5>Match number: <span id="matchNumber"></span></h5>
+                <h5>Match number: <span id="matchesPlayed"></span></h5>
             </div>
+        </div>
+        <div class="row">
             <div class="col">
                 <div id="board2" class="historyBoard" style="width: 200px"></div>
                 <div id="board3" class="historyBoard" style="width: 200px"></div>
@@ -201,6 +203,9 @@
             showNotation: false
         });
 
+        if (localStorage.getItem("matchesPlayed") == undefined) {
+            localStorage.setItem("matchesPlayed", 0)
+        }
         document.getElementById("CreateNewModels").addEventListener("click", async() => {
             for (let i = 0; i < NNTrainer.amountOfModels; i++) {
                 await NNTrainer.addModelToTrainer();
@@ -211,7 +216,7 @@
         async function mutateModels() {
             for (let j = 0; j < 100; j++) {
                 for (let index = 0; index < NNTrainer.amountOfModels; index++) {
-                    await NNTrainer.models[index].extremeMutate(0.5);
+                    await NNTrainer.models[index].mutate(100);
                 }
             }
             console.log("created new models");
@@ -310,6 +315,7 @@
                 await NNTrainer.loadModels();
                 await NNTrainer.startTraining();
             })();
+            document.getElementById('startTheTraining').innerHTML = "Pause Training";
         }
     </script>
 </body>
