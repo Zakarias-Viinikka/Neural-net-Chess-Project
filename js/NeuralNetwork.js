@@ -1,7 +1,6 @@
 class NeuralNetwork {
     constructor(model) {
         this.model = model;
-        this._zig = new Ziggurat();
     }
 
     cloneModel() {
@@ -19,20 +18,15 @@ class NeuralNetwork {
             let values = tensor.dataSync().slice();
             for (let j = 0; j < values.length; j++) {
                 if (Math.random() < rate) {
-                    let w = values[j];
-                    let hardMutate = Math.random() * 100;
-                    if (hardMutate <= 0.1) {
-                        values[j] = this._zig.nextGaussian(w);
-                    } else {
-                        values[j] = this._zig.slowTraining(w);
-                    }
+                    //let w = values[j];
+                    let change = Math.random() + 0.5;
+                    values[j] = values[j] * change;
                 }
             }
             let newTensor = tf.tensor(values, shape);
             mutatedWeights[i] = newTensor;
         }
         this.model.setWeights(mutatedWeights);
-
         this.model.setWeights(mutatedWeights);
         tf.dispose(mutatedWeights);
     }

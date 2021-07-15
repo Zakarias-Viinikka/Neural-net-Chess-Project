@@ -187,7 +187,7 @@ class playMatch {
             points = this.winningReward * 5;
         } else if (this.chess.in_threefold_repetition()) {
             winner = this.getModelToMoveId();
-            this.matchResults.result = "repetition";
+            this.matchResults.result = "draw"; //"repetition";
             points = this.winningReward * 2;
         } else {
             this.matchResults.result = "draw";
