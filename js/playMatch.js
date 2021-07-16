@@ -135,11 +135,11 @@ class playMatch {
         if (move.indexOf("x") != -1) {
             if (this.matchResults.winnerPoints < this.winningReward && this.matchResults.winnerPoints < this.winningReward) {
                 if (this.modelToMove == 0) {
-                    this.matchResults.model0Points += 1;
-                    this.matchResults.model1Points -= 1;
+                    this.matchResults.model0Points += 3;
+                    this.matchResults.model1Points -= 3;
                 } else {
-                    this.matchResults.model0Points -= 1;
-                    this.matchResults.model1Points += 1;
+                    this.matchResults.model0Points -= 3;
+                    this.matchResults.model1Points += 3;
                 }
             }
         }
@@ -191,10 +191,6 @@ class playMatch {
             points = this.winningReward * 2;
         } else {
             this.matchResults.result = "draw";
-        }
-
-        if (this.matchResults.result == "draw") {
-            return;
         }
 
         if (this.model0Id == winner) {

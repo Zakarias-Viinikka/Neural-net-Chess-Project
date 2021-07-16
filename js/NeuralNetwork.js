@@ -9,7 +9,7 @@ class NeuralNetwork {
         return newModel;
     }
     async mutate(rate) {
-        rate = rate / 1000;
+        rate = rate / 100000;
         const weights = this.model.getWeights();
         const mutatedWeights = [];
         for (let i = 0; i < weights.length; i++) {
@@ -19,8 +19,13 @@ class NeuralNetwork {
             for (let j = 0; j < values.length; j++) {
                 if (Math.random() < rate) {
                     //let w = values[j];
-                    let change = Math.random() + 0.5;
-                    values[j] = values[j] * change;
+                    if (Math.random() > 0.5) {
+                        let change = Math.random() + 0.5;
+                        values[j] = values[j] * change;
+                    } else {
+                        let change = Math.random() * 2 - 1;
+                        values[j] += change;
+                    }
                 }
             }
             let newTensor = tf.tensor(values, shape);

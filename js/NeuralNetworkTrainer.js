@@ -49,7 +49,7 @@ class NeuralNetworkTrainer {
             await this.tournament();
             if (this.locationReload) {
                 this.locationReloadctr++;
-                if (this.locationReloadctr > 20) {
+                if (this.locationReloadctr > 5) {
                     document.location.reload();
                 }
             }
