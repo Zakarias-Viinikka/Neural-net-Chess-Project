@@ -228,9 +228,9 @@ class playMatch {
             points = this.winningReward;
         } else if (repetition == 1 || this.chess.in_threefold_repetition()) {
             if (this.matchResults.model0Points < this.matchResults.model1Points) {
-                winner = this.matchResults.model0;
+                winner = this.matchResults.model0Id;
             } else {
-                winner = this.matchResults.model1;
+                winner = this.matchResults.model1Id;
             }
             this.matchResults.result = "repetition";
             points = this.winningReward;
