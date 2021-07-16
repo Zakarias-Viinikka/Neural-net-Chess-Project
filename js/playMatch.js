@@ -113,8 +113,8 @@ class playMatch {
                 if (move.indexOf("p") != -1 || move.indexOf("P") != -1 || move.indexOf("x") != -1) {
                     this.history = [];
                 }
-                //this.rewardEatingPieces(move);
-                //this.rewardAttackingKing();
+                this.rewardEatingPieces(move);
+                this.rewardAttackingKing();
                 let justBoardStateAsFenString = "";
                 let ctr = 0;
                 while (true) {

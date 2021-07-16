@@ -83,13 +83,13 @@ class NeuralNetworkTrainer {
         let modelId = 0;
         let opponentModelId = 1;
         let matchPlayers = [];
+        let results;
         this.matchesPlayed++;
         this.matchesToPlay = parseInt(this.models.length / 2);
         for (let i = 0; i < this.matchesToPlay && this.keepTraining; i++) {
             modelId = i;
             opponentModelId = this.models.length - i - 1;
             matchPlayers[i] = new playMatch(modelId, opponentModelId, this.winningReward, i, this.showMoves, this.disableDOMS);
-            let results;
 
             await matchPlayers[i].start().then(r => results = r);
             this.updateModelScore(results.model0Id, results.model0Points)
