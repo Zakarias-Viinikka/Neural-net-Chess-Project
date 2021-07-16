@@ -1,5 +1,5 @@
 class playMatch {
-    constructor(model0Id, model1Id, winningReward, _matchIndex, showMoves, disableDOMS) {
+    constructor(model0Id, model1Id, winningReward, _matchIndex, showMoves, disableDOMS, originalChess) {
         this.showMoves = showMoves;
         this.model0Reward = 0;
         this.model1Reward = 0;
@@ -41,6 +41,7 @@ class playMatch {
             this.model1Id = model0Id;
             this.model0Id = model1Id;
         }
+        this.repetition = 0;
     }
     async start() {
         if (!this.disableDOMS) {
@@ -91,8 +92,8 @@ class playMatch {
                 if (move.indexOf("p") != -1 || move.indexOf("P") != -1 || move.indexOf("x") != -1) {
                     this.history = [];
                 }
-                this.rewardEatingPieces(move);
-                this.rewardAttackingKing();
+                //this.rewardEatingPieces(move);
+                //this.rewardAttackingKing();
                 let justBoardStateAsFenString = "";
                 let ctr = 0;
                 while (true) {
@@ -179,21 +180,53 @@ class playMatch {
     getMatchResults() {
         let winner;
         let points;
+
+        let repetition = 0;
+        let justBoardStateFen = "";
+        let ctr = 0;
+        while (true) {
+            let fenCharacter = this.chess.fen().charAt(ctr);
+            if (fenCharacter == " ") {
+                break;
+            }
+            justBoardStateFen += fenCharacter;
+            ctr++;
+        }
+        for (let i = 0; i < this.history.length; i++) {
+            if (this.history[i] == justBoardStateFen) {
+                repetition += 0.5;
+            }
+        }
+
+        console.log(repetition);
         this.matchResults.white = this.model0Id;
         this.updateLastGameBoard();
         if (this.chess.in_checkmate()) {
             winner = this.getModelNotToMoveId();
             this.matchResults.result = "checkmate";
-            points = this.winningReward * 5;
-        } else if (this.chess.in_threefold_repetition()) {
-            winner = this.getModelToMoveId();
-            this.matchResults.result = "draw"; //"repetition";
-            points = this.winningReward * 2;
+            points = this.winningReward;
+        } else if (repetition == 1 || this.chess.in_threefold_repetition()) {
+            if (this.matchResults.model0Points < this.matchResults.model1Points) {
+                winner = this.matchResults.model0;
+            } else {
+                winner = this.matchResults.model1;
+            }
+            this.matchResults.result = "repetition";
+            points = this.winningReward;
+        } else if (this.chess.in_stalemate()) {
+            winner = this.getModelToMove();
+            points = this.winningReward;
+            console.log("stalemate")
         } else {
+            this.matchResults.winner = "draw";
             this.matchResults.result = "draw";
+            points = 0;
+            console.log("insufficient material: " + this.chess.insufficient_material());
+            console.log("50 move rule: " + this.history.length)
         }
+        this.matchResults.winner = winner;
 
-        if (this.model0Id == winner) {
+        if (winner == this.model0Id) {
             this.matchResults.model0Points += points;
             this.matchResults.model1Points -= points;
         } else {
@@ -202,7 +235,7 @@ class playMatch {
 
         }
 
-        this.matchResults.winner = winner;
+        console.log(this.matchResults.result)
     }
 
     getModelToMoveId() {

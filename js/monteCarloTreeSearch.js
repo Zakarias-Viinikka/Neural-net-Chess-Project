@@ -14,12 +14,12 @@ class monteCarloTreeSearch {
         this.model = model;
         this.history = history;
 
-        await this.createTreeBranchRoots().then(r => r);
+        await this.createTreeBranchRoots();
         this.treeBranchRoots.sort(function(a, b) { return a.evaluation - b.evaluation });
 
-        await this.treeSearch().then(r => r);
-        let bestRoot = await this.getBestRoot().then(r => r);
-        await this.resetStuff().then(r => r);
+        await this.treeSearch();
+        let bestRoot = await this.getBestRoot();
+        await this.resetStuff();
         return bestRoot.move;
     }
 
