@@ -229,7 +229,7 @@ class playMatch {
         } else if (repetition == 1 || this.chess.in_threefold_repetition()) {
             if (this.matchResults.model0Points < this.matchResults.model1Points) {
                 winner = this.matchResults.model0Id;
-            } else {
+            } else if (this.matchResults.model0Points > this.matchResults.model1Points) {
                 winner = this.matchResults.model1Id;
             }
             this.matchResults.result = "repetition";
