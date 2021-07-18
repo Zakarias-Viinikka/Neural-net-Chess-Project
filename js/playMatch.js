@@ -157,9 +157,12 @@ class playMatch {
 
     rewardEatingPieces(move) {
         if (move.indexOf("x") != -1) {
-            if (this.matchResults.winnerPoints < this.winningReward && this.matchResults.winnerPoints < this.winningReward) {
+            if (this.matchResults.model0Points < this.winningReward && this.matchResults.model1Points < this.winningReward) {
                 let reward = 1;
-                let pieceEaten = move.charAt(move.length - 1).toLowerCase();
+                move = move.toLowerCase();
+
+                let pieceEaten = move.charAt(move.indexOf("x") + 1);
+                console.log(pieceEaten);
                 if (pieceEaten == "q") {
                     reward = 9;
                 } else if (pieceEaten == "r") {
@@ -168,6 +171,7 @@ class playMatch {
                     reward = 3;
                 }
                 reward = reward * 2;
+
                 if (this.modelToMove == 0) {
                     this.matchResults.model0Points += 3;
                 } else {
