@@ -126,7 +126,9 @@ class playMatch {
                     ctr++;
                 }
 
-                this.history.push(justBoardStateAsFenString);
+                if (!this.chess.game_over()) {
+                    this.history.push(justBoardStateAsFenString);
+                }
 
                 if (!this.disableDOMS) {
                     board = Chessboard('board', this.chess.fen());
@@ -156,11 +158,19 @@ class playMatch {
     rewardEatingPieces(move) {
         if (move.indexOf("x") != -1) {
             if (this.matchResults.winnerPoints < this.winningReward && this.matchResults.winnerPoints < this.winningReward) {
+                let reward = 1;
+                let pieceEaten = move.charAt(move.length - 1).toLowerCase();
+                if (pieceEaten == "q") {
+                    reward = 9;
+                } else if (pieceEaten == "r") {
+                    reward = 5;
+                } else if (pieceEaten == "n" || pieceEaten == "b") {
+                    reward = 3;
+                }
+                reward = reward * 2;
                 if (this.modelToMove == 0) {
                     this.matchResults.model0Points += 3;
-                    this.matchResults.model1Points -= 3;
                 } else {
-                    this.matchResults.model0Points -= 3;
                     this.matchResults.model1Points += 3;
                 }
             }
@@ -171,11 +181,9 @@ class playMatch {
         if (this.chess.in_check()) {
             if (this.matchResults.model0Points < this.winningReward && this.matchResults.model1Points < this.winningReward) {
                 if (this.modelToMove == 0) {
-                    this.matchResults.model0Points -= 1;
                     this.matchResults.model1Points += 1;
                 } else {
                     this.matchResults.model0Points += 1;
-                    this.matchResults.model1Points -= 1;
                 }
             }
         }
@@ -237,7 +245,7 @@ class playMatch {
         } else if (this.chess.in_stalemate()) {
             winner = this.getModelToMove();
             points = this.winningReward;
-            console.log("stalemate")
+            this.matchResults.result = "stalemate";
         } else {
             this.matchResults.winner = "draw";
             this.matchResults.result = "draw";

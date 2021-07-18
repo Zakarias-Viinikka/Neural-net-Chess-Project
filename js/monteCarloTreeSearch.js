@@ -93,7 +93,6 @@ class treeBranchRoot {
         this.treeBranches = [];
         this.opponentTurn = -1;
         this.history = history;
-        this.history.push(boardPosition);
     }
 
     async analyzeBestMove() {
