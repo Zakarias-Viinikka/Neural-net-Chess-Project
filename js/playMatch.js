@@ -234,7 +234,13 @@ class playMatch {
             winner = this.getModelNotToMoveId();
             this.matchResults.result = "checkmate";
             points = this.winningReward;
-        } else if (repetition == 1 || this.chess.in_threefold_repetition()) {
+        } else {
+            this.matchResults.winner = "draw";
+            this.matchResults.result = "draw";
+            points = 0;
+        }
+
+        /*else if (repetition == 1 || this.chess.in_threefold_repetition()) {
             if (this.matchResults.model0Points < this.matchResults.model1Points) {
                 winner = this.matchResults.model0Id;
             } else if (this.matchResults.model0Points > this.matchResults.model1Points) {
@@ -252,7 +258,7 @@ class playMatch {
             points = 0;
             console.log("insufficient material: " + this.chess.insufficient_material());
             console.log("50 move rule: " + this.history.length)
-        }
+        }*/
         this.matchResults.winner = winner;
 
         if (winner == this.model0Id) {
