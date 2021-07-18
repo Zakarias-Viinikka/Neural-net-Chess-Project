@@ -159,10 +159,8 @@ class playMatch {
         if (move.indexOf("x") != -1) {
             if (this.matchResults.model0Points < this.winningReward && this.matchResults.model1Points < this.winningReward) {
                 let reward = 1;
-                move = move.toLowerCase();
-
-                let pieceEaten = move.charAt(move.indexOf("x") + 1);
-                console.log(pieceEaten);
+                let square = move.charAt(move.indexOf("x") + 1) + move.charAt(move.indexOf("x") + 2);
+                let pieceEaten = this.chess.get(square).type;
                 if (pieceEaten == "q") {
                     reward = 9;
                 } else if (pieceEaten == "r") {
