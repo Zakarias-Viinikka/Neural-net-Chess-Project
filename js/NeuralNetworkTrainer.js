@@ -210,16 +210,15 @@ class NeuralNetworkTrainer {
             let nnTrainer = this;
             this.modelScores.sort(function(a, b) { return nnTrainer.getModelScore(b) - nnTrainer.getModelScore(a) });
 
-            for (let i = 0; i < 2; i++) {
+            for (let i = 0; i < this.models.length / 2; i++) {
                 topHalf.push(this.models[i]);
                 losers.push(this.models[this.models.length - i - 1]);
             }
 
             for (let i = 0; i < topHalf.length; i++) {
+                console.log("eat")
                 await this.cloneAndMutate(topHalf[i], losers[i]);
             }
-        } else if (this.trainingGoal = "eat") {
-
         }
 
         this.updateFinishedTrainingLogs();
@@ -227,7 +226,7 @@ class NeuralNetworkTrainer {
 
     async cloneAndMutate(originalElite, toBecomeMutated) {
         let eliteWeights = originalElite.model.getWeights();
-        await this.setWeight(toBecomeMutated, eliteWeights).then(r => r);
+        await this.setWeight(toBecomeMutated, eliteWeights);
         await toBecomeMutated.mutate(this.rate);
     }
 
