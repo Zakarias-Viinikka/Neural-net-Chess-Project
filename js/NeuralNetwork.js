@@ -32,7 +32,7 @@ class NeuralNetwork {
                 }
             }
             */
-            let weightToChange = Math.random() * weights.length;
+            let weightToChange = parseInt(Math.random() * weights.length);
             if (Math.random() > 0.5) {
                 let change = Math.random() + 0.5;
                 values[weightToChange] = values[weightToChange] * change;
