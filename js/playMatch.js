@@ -134,7 +134,7 @@ class playMatch {
                     this.history = [];
                 }
                 this.rewardEatingPieces(move);
-                this.rewardAttackingKing();
+                //this.rewardAttackingKing();
                 let justBoardStateAsFenString = "";
                 let ctr = 0;
                 while (true) {

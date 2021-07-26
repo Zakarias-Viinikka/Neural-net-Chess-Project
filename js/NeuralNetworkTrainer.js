@@ -216,7 +216,6 @@ class NeuralNetworkTrainer {
             }
 
             for (let i = 0; i < topHalf.length; i++) {
-                console.log("eat")
                 await this.cloneAndMutate(topHalf[i], losers[i]);
             }
         }
